@@ -1,0 +1,1586 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>תרצני - מחולל תירוצים</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#f59e0b">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="תרצני">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;600;700;800;900&family=Rubik:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+--bg:#181511;--bg2:#221c10;--surface:#2c241b;--surface2:#3a3024;--surface3:#4a3f30;
+--primary:#f59e0b;--primary-dark:#d97706;--red:#ef4444;--green:#10b981;--blue:#3b82f6;
+--text:#ffffff;--text2:rgba(255,255,255,0.6);--text3:rgba(255,255,255,0.35);
+--border:rgba(255,255,255,0.08);--ease:cubic-bezier(0.4,0,0.2,1);
+}
+html{font-size:16px;-webkit-text-size-adjust:100%}
+body{font-family:'Heebo',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;min-height:100dvh;overflow-x:hidden;-webkit-font-smoothing:antialiased}
+.screen{display:none;min-height:100vh;min-height:100dvh;position:relative}
+.screen.active{display:flex;flex-direction:column;animation:fadeUp .5s var(--ease)}
+
+/* Animations */
+@keyframes fadeUp{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:translateY(0)}}
+@keyframes slideUp{from{opacity:0;transform:translateY(40px)}to{opacity:1;transform:translateY(0)}}
+@keyframes slideIn{from{opacity:0;transform:translateX(-20px)}to{opacity:1;transform:translateX(0)}}
+@keyframes flicker{0%,100%{opacity:1;filter:brightness(1)}25%{opacity:.85;filter:brightness(1.3)}50%{opacity:1;filter:brightness(1.1)}75%{opacity:.9;filter:brightness(1.2)}}
+@keyframes glowPulse{0%,100%{box-shadow:0 0 20px rgba(245,158,11,.3),0 0 60px rgba(245,158,11,.1)}50%{box-shadow:0 0 30px rgba(245,158,11,.5),0 0 80px rgba(245,158,11,.2)}}
+@keyframes crazyShake{0%,100%{transform:rotate(0)}10%{transform:rotate(2deg)}20%{transform:rotate(-2deg)}30%{transform:rotate(3deg)}40%{transform:rotate(-1deg)}50%{transform:rotate(2deg)}60%{transform:rotate(-3deg)}70%{transform:rotate(1deg)}80%{transform:rotate(-2deg)}90%{transform:rotate(2deg)}}
+@keyframes confettiFall{0%{transform:translateY(-10vh) rotate(0);opacity:1}100%{transform:translateY(110vh) rotate(720deg);opacity:0}}
+@keyframes meterFill{from{width:0}to{width:var(--fill)}}
+@keyframes loadBar{from{width:0}to{width:100%}}
+@keyframes pulseGlow{0%,100%{transform:scale(1);opacity:.5}50%{transform:scale(1.15);opacity:.8}}
+@keyframes slideUpSheet{from{transform:translateY(100%)}to{transform:translateY(0)}}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+@keyframes fadeOut{from{opacity:1}to{opacity:0}}
+
+/* Splash */
+#splash{background:var(--bg);justify-content:center;align-items:center;text-align:center;position:relative;overflow:hidden}
+#splash .glow-ring{position:absolute;width:200px;height:200px;border-radius:50%;background:radial-gradient(circle,rgba(245,158,11,.25),transparent 70%);animation:pulseGlow 2s ease-in-out infinite;top:50%;left:50%;transform:translate(-50%,-60%)}
+#splash .flame-icon{font-size:8rem;color:var(--primary);animation:flicker 1.5s ease-in-out infinite;position:relative;z-index:1}
+#splash .splash-title{font-size:1.8rem;font-weight:900;background:linear-gradient(135deg,#ffd700,#f59e0b,#ef4444);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-top:16px;position:relative;z-index:1}
+#splash .splash-sub{color:var(--text3);font-size:.95rem;margin-top:8px;position:relative;z-index:1}
+#splash .load-wrap{position:absolute;bottom:80px;left:50%;transform:translateX(-50%);width:180px;height:3px;background:rgba(255,255,255,.1);border-radius:4px;overflow:hidden}
+#splash .load-fill{height:100%;background:linear-gradient(90deg,var(--primary),var(--red));border-radius:4px;animation:loadBar 2.4s var(--ease) forwards}
+#splash .version{position:absolute;bottom:40px;left:50%;transform:translateX(-50%);color:var(--text3);font-size:.7rem}
+
+/* App Header */
+.app-header{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;position:sticky;top:0;z-index:50;background:rgba(24,21,17,.85);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-bottom:1px solid var(--border)}
+.app-header .logo{display:flex;align-items:center;gap:8px;font-size:1.4rem;font-weight:900;background:linear-gradient(135deg,#ffd700,#f59e0b,#ef4444);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.app-header .logo-emoji{font-size:1.6rem;-webkit-text-fill-color:initial}
+.app-header .gear-btn{background:none;border:none;color:var(--text2);cursor:pointer;padding:8px;border-radius:12px;transition:all .2s var(--ease);font-size:1.5rem;line-height:1}
+.app-header .gear-btn:hover{color:var(--primary);background:rgba(245,158,11,.1)}
+
+/* Stepper */
+.stepper{display:flex;align-items:center;justify-content:center;gap:0;padding:20px 20px 8px;direction:ltr}
+.step{display:flex;align-items:center;gap:0}
+.step-circle{width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.1rem;transition:all .3s var(--ease);border:2px solid var(--surface3);background:var(--surface);color:var(--text3)}
+.step-circle.active{border-color:var(--primary);background:rgba(245,158,11,.15);color:var(--primary)}
+.step-circle.done{border-color:var(--green);background:rgba(16,185,129,.15);color:var(--green)}
+.step-line{width:50px;height:2px;background:var(--surface3);transition:background .3s var(--ease)}
+.step-line.done{background:var(--green)}
+
+/* Screen Content */
+.screen-body{flex:1;padding:0 20px 100px;overflow-y:auto}
+.screen-title{font-size:1.5rem;font-weight:800;margin:20px 0 4px;text-align:center}
+.screen-subtitle{color:var(--text2);font-size:.85rem;text-align:center;margin-bottom:20px}
+
+/* Card Grid and Glass Cards */
+.card-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.card-grid.single-col{grid-template-columns:1fr}
+.glass-card{background:linear-gradient(135deg,rgba(255,255,255,.06),rgba(255,255,255,.02));backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border:1px solid var(--border);border-radius:16px;padding:20px 16px;text-align:center;cursor:pointer;transition:all .25s var(--ease);position:relative;overflow:hidden}
+.glass-card:hover{border-color:rgba(245,158,11,.3);background:linear-gradient(135deg,rgba(245,158,11,.08),rgba(255,255,255,.03))}
+.glass-card:active{transform:scale(.97)}
+.glass-card.selected{border-color:var(--primary);background:linear-gradient(135deg,rgba(245,158,11,.12),rgba(245,158,11,.04));box-shadow:0 0 20px rgba(245,158,11,.15)}
+.glass-card .card-emoji{font-size:44px;display:block;margin-bottom:8px;line-height:1.2}
+.glass-card .card-label{font-weight:700;font-size:1rem}
+.glass-card .card-desc{color:var(--text2);font-size:.78rem;margin-top:4px;line-height:1.4}
+.glass-card .urgency-tag{display:inline-block;padding:2px 10px;border-radius:20px;font-size:.7rem;font-weight:700;margin-top:8px}
+.glass-card .urgency-tag.urgent{background:rgba(239,68,68,.15);color:var(--red)}
+.glass-card .urgency-tag.planned{background:rgba(16,185,129,.15);color:var(--green)}
+
+/* Summary Bar */
+.summary-bar{position:fixed;bottom:0;left:0;right:0;background:rgba(24,21,17,.95);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border-top:1px solid var(--border);padding:12px 20px;z-index:40;display:none;animation:slideUp .3s var(--ease)}
+.summary-bar.visible{display:block}
+.summary-chips{display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap;justify-content:center}
+.summary-chip{background:var(--surface2);padding:4px 12px;border-radius:20px;font-size:.78rem;color:var(--text2);display:flex;align-items:center;gap:4px}
+.cta-btn{width:100%;padding:14px;border:none;border-radius:14px;font-family:'Heebo',sans-serif;font-size:1.1rem;font-weight:800;color:#000;cursor:pointer;background:linear-gradient(135deg,#f59e0b,#ef4444);animation:glowPulse 2s ease-in-out infinite;transition:all .2s var(--ease)}
+.cta-btn:active{transform:scale(.97)}
+
+/* Results */
+.confetti-container{position:fixed;top:0;left:0;right:0;bottom:0;pointer-events:none;z-index:100;overflow:hidden}
+.confetti{position:absolute;width:10px;height:10px;border-radius:2px;animation:confettiFall linear forwards;opacity:0}
+.context-badges{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-bottom:20px}
+.context-badge{background:var(--surface2);padding:6px 14px;border-radius:20px;font-size:.8rem;color:var(--text2)}
+.excuse-card{background:var(--surface);border:1px solid var(--border);border-radius:18px;padding:20px;margin-bottom:14px;position:relative;overflow:hidden;animation:slideUp .5s var(--ease) backwards}
+.excuse-card:nth-child(2){animation-delay:.1s}
+.excuse-card:nth-child(3){animation-delay:.2s}
+.excuse-card:nth-child(4){animation-delay:.3s}
+.excuse-card .rank-badge{display:inline-flex;align-items:center;gap:4px;padding:4px 12px;border-radius:20px;font-size:.75rem;font-weight:700;margin-bottom:10px}
+.rank-badge.gold{background:rgba(255,215,0,.15);color:#ffd700}
+.rank-badge.silver{background:rgba(192,192,192,.15);color:#c0c0c0}
+.rank-badge.bronze{background:rgba(205,127,50,.15);color:#cd7f32}
+.excuse-card .stars{color:#ffd700;font-size:.85rem;margin-bottom:8px}
+.excuse-card .excuse-text{font-size:1.05rem;font-weight:600;line-height:1.6;margin-bottom:14px;position:relative;padding-right:12px}
+.excuse-card .excuse-text::before{content:'\201F';position:absolute;right:0;top:-4px;font-size:1.5rem;color:var(--primary);opacity:.5}
+
+/* Credibility Meter */
+.cred-meter{margin-bottom:14px}
+.cred-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;font-size:.78rem}
+.cred-label{color:var(--text2)}
+.cred-pct{font-weight:700}
+.cred-bar{height:6px;background:var(--surface3);border-radius:6px;overflow:hidden}
+.cred-fill{height:100%;border-radius:6px;animation:meterFill 1s var(--ease) forwards;width:0}
+.cred-fill.green{background:linear-gradient(90deg,#10b981,#34d399)}
+.cred-fill.amber{background:linear-gradient(90deg,#f59e0b,#fbbf24)}
+.cred-fill.red{background:linear-gradient(90deg,#ef4444,#f87171)}
+.cred-desc{font-size:.72rem;margin-top:4px}
+
+/* Excuse Actions */
+.excuse-actions{display:flex;gap:8px;flex-wrap:wrap}
+.excuse-actions button{background:var(--surface2);border:1px solid var(--border);color:var(--text2);padding:8px 14px;border-radius:10px;font-family:'Heebo',sans-serif;font-size:.78rem;cursor:pointer;transition:all .2s var(--ease);display:flex;align-items:center;gap:4px}
+.excuse-actions button:hover{border-color:var(--primary);color:var(--primary)}
+.excuse-actions button.copied{background:rgba(16,185,129,.15);border-color:var(--green);color:var(--green)}
+
+/* Crazy Card */
+.crazy-card{background:linear-gradient(135deg,rgba(168,85,247,.12),rgba(236,72,153,.12));border:2px dashed rgba(168,85,247,.4);border-radius:18px;padding:20px;margin-bottom:14px;animation:crazyShake 3s ease-in-out infinite,slideUp .5s var(--ease) .35s backwards;position:relative}
+.crazy-card .crazy-header{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+.crazy-card .ai-badge{background:linear-gradient(135deg,#a855f7,#ec4899);padding:2px 10px;border-radius:12px;font-size:.65rem;font-weight:800;color:#fff}
+.crazy-card .crazy-title{font-size:.85rem;color:rgba(168,85,247,.9)}
+.crazy-card .excuse-text{font-size:1rem;font-weight:600;line-height:1.6;margin-bottom:10px}
+.crazy-card .crazy-warning{font-size:.7rem;color:var(--red);opacity:.7;margin-top:8px}
+
+/* Bottom Actions */
+.bottom-actions{text-align:center;padding:20px 0}
+.new-excuse-btn{background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:14px 32px;border-radius:14px;font-family:'Heebo',sans-serif;font-size:1rem;font-weight:700;cursor:pointer;transition:all .2s var(--ease)}
+.new-excuse-btn:hover{border-color:var(--primary);background:var(--surface3)}
+.disclaimer{color:var(--text3);font-size:.65rem;margin-top:12px;text-align:center}
+
+/* Follow-Up */
+.followup-original{background:var(--surface);border:2px solid var(--primary);border-radius:16px;padding:16px;margin-bottom:20px;font-weight:600;line-height:1.6}
+.qa-card{background:#1e293b;border:1px solid var(--border);border-radius:14px;overflow:hidden;margin-bottom:12px;animation:slideUp .4s var(--ease) backwards}
+.qa-card:nth-child(2){animation-delay:.1s}
+.qa-card:nth-child(3){animation-delay:.15s}
+.qa-card:nth-child(4){animation-delay:.2s}
+.qa-attack{padding:14px 16px;border-right:3px solid var(--red);display:flex;align-items:flex-start;gap:8px}
+.qa-attack .qa-icon{color:var(--red);font-size:1.1rem;flex-shrink:0;margin-top:2px}
+.qa-attack .qa-text{font-weight:700;font-size:.9rem;line-height:1.5}
+.qa-defense{padding:14px 16px;border-right:3px solid var(--primary);background:rgba(245,158,11,.04);display:flex;align-items:flex-start;gap:8px}
+.qa-defense .qa-icon{font-size:1.1rem;flex-shrink:0;margin-top:2px}
+.qa-defense .qa-text{font-size:.88rem;line-height:1.5;color:var(--text2)}
+.qa-defense .copy-answer{background:none;border:none;color:var(--text3);cursor:pointer;font-size:.75rem;margin-top:6px;padding:4px 8px;border-radius:6px;transition:all .2s;font-family:'Heebo',sans-serif}
+.qa-defense .copy-answer:hover{color:var(--primary);background:rgba(245,158,11,.1)}
+
+/* Share Sheet */
+.share-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.6);z-index:200;display:none;animation:fadeIn .2s var(--ease)}
+.share-overlay.visible{display:block}
+.share-sheet{position:fixed;bottom:0;left:0;right:0;background:var(--bg2);border-radius:20px 20px 0 0;padding:12px 20px 32px;z-index:201;display:none;max-height:70vh;overflow-y:auto}
+.share-sheet.visible{display:block;animation:slideUpSheet .35s var(--ease)}
+.share-handle{width:40px;height:4px;background:var(--surface3);border-radius:4px;margin:0 auto 16px}
+.share-preview{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:14px;margin-bottom:16px;font-size:.9rem;line-height:1.5;color:var(--text2);position:relative}
+.share-primary{width:100%;padding:14px;border:none;border-radius:14px;font-family:'Heebo',sans-serif;font-size:1rem;font-weight:700;color:#fff;cursor:pointer;background:#25D366;margin-bottom:10px;display:flex;align-items:center;justify-content:center;gap:8px;transition:all .2s var(--ease)}
+.share-primary:active{transform:scale(.97)}
+.share-secondary{width:100%;padding:12px;border:1px solid var(--border);border-radius:14px;font-family:'Heebo',sans-serif;font-size:.9rem;font-weight:600;color:var(--text2);cursor:pointer;background:var(--surface);margin-bottom:16px;transition:all .2s var(--ease)}
+.share-secondary:hover{border-color:var(--primary)}
+.share-icons{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.share-icon-btn{display:flex;flex-direction:column;align-items:center;gap:6px;padding:16px 8px;background:var(--surface);border:1px solid var(--border);border-radius:14px;cursor:pointer;transition:all .2s var(--ease);font-family:'Heebo',sans-serif;font-size:.78rem;color:var(--text2)}
+.share-icon-btn:hover{border-color:var(--primary);color:var(--primary)}
+.share-icon-btn .s-icon{font-size:1.5rem}
+
+/* Settings */
+.settings-profile{text-align:center;padding:24px 0}
+.settings-avatar{width:72px;height:72px;border-radius:50%;background:var(--surface2);display:flex;align-items:center;justify-content:center;margin:0 auto 12px;font-size:2rem}
+.settings-name{font-weight:700;font-size:1.1rem;margin-bottom:4px}
+.settings-plan{display:inline-block;background:var(--surface2);padding:4px 14px;border-radius:20px;font-size:.75rem;color:var(--text2)}
+.premium-banner{background:linear-gradient(135deg,rgba(245,158,11,.15),rgba(234,88,12,.15));border:1px solid rgba(245,158,11,.3);border-radius:16px;padding:18px;margin:0 0 24px;display:flex;align-items:center;gap:14px;cursor:pointer;transition:all .2s var(--ease)}
+.premium-banner:hover{border-color:var(--primary)}
+.premium-banner .pb-icon{font-size:2rem;flex-shrink:0}
+.premium-banner .pb-title{font-weight:800;font-size:1rem;color:var(--primary)}
+.premium-banner .pb-desc{font-size:.78rem;color:var(--text2);margin-top:2px}
+.settings-group{margin-bottom:20px}
+.settings-group-title{font-size:.75rem;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;padding-right:4px}
+.settings-list{background:var(--surface);border-radius:14px;overflow:hidden;border:1px solid var(--border)}
+.settings-item{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid var(--border);cursor:pointer;transition:background .2s var(--ease)}
+.settings-item:last-child{border-bottom:none}
+.settings-item:hover{background:var(--surface2)}
+.settings-item .si-right{display:flex;align-items:center;gap:10px}
+.settings-item .si-label{font-size:.9rem}
+.settings-item .si-icon{font-size:1.2rem;width:28px;text-align:center}
+.settings-item .si-value{color:var(--text3);font-size:.82rem}
+.toggle{width:48px;height:28px;border-radius:14px;background:var(--surface3);position:relative;cursor:pointer;transition:background .3s var(--ease);border:none;flex-shrink:0}
+.toggle.on{background:var(--primary)}
+.toggle .toggle-knob{width:22px;height:22px;border-radius:50%;background:#fff;position:absolute;top:3px;right:3px;transition:all .3s var(--ease);box-shadow:0 1px 4px rgba(0,0,0,.3)}
+.toggle.on .toggle-knob{right:auto;left:3px}
+.signout-btn{width:100%;padding:14px;border:1px solid rgba(239,68,68,.3);border-radius:14px;background:rgba(239,68,68,.08);color:var(--red);font-family:'Heebo',sans-serif;font-size:.95rem;font-weight:700;cursor:pointer;margin-top:12px;transition:all .2s var(--ease)}
+.signout-btn:hover{background:rgba(239,68,68,.15)}
+.back-btn{background:none;border:none;color:var(--text2);cursor:pointer;padding:8px;border-radius:12px;transition:all .2s var(--ease);display:flex;align-items:center;gap:4px;font-family:'Heebo',sans-serif;font-weight:600;font-size:.9rem}
+.back-btn:hover{color:var(--primary)}
+.back-btn .material-symbols-outlined{font-size:1.3rem}
+.install-banner{position:fixed;bottom:0;left:0;right:0;background:var(--bg2);border-top:1px solid var(--border);padding:14px 20px;z-index:60;display:none;animation:slideUp .3s var(--ease)}
+.install-banner.visible{display:flex;align-items:center;gap:12px}
+.install-banner .ib-text{flex:1;font-size:.85rem}
+.install-banner .ib-btn{background:var(--primary);color:#000;border:none;padding:8px 18px;border-radius:10px;font-family:'Heebo',sans-serif;font-weight:700;font-size:.85rem;cursor:pointer}
+.install-banner .ib-close{background:none;border:none;color:var(--text3);cursor:pointer;font-size:1.2rem}
+@media(max-width:360px){
+.card-grid{gap:8px}.glass-card{padding:14px 10px}.glass-card .card-emoji{font-size:36px}.screen-title{font-size:1.3rem}
+}
+</style>
+</head>
+<body>
+
+<!-- ===== SCREEN 1: SPLASH ===== -->
+<div id="splash" class="screen active">
+  <div class="glow-ring"></div>
+  <span class="material-symbols-outlined flame-icon">local_fire_department</span>
+  <div class="splash-title">התירוץ שלך על האש</div>
+  <div class="splash-sub">מכינים משהו חריף...</div>
+  <div class="load-wrap"><div class="load-fill"></div></div>
+  <div class="version">Ver 2.0 &bull; Tartzeni</div>
+</div>
+
+<!-- ===== SCREEN 2: EVENT SELECTION ===== -->
+<div id="screen-event" class="screen">
+  <header class="app-header">
+    <div class="logo"><span class="logo-emoji">&#x1FAE3;</span><span>תרצני</span></div>
+    <button class="gear-btn" onclick="showScreen('screen-settings')">&#x2699;&#xFE0F;</button>
+  </header>
+  <div class="stepper">
+    <div class="step"><div class="step-circle active" id="sc1"><span class="material-symbols-outlined">event</span></div></div>
+    <div class="step-line" id="sl1"></div>
+    <div class="step"><div class="step-circle" id="sc2"><span class="material-symbols-outlined">schedule</span></div></div>
+    <div class="step-line" id="sl2"></div>
+    <div class="step"><div class="step-circle" id="sc3"><span class="material-symbols-outlined">distance</span></div></div>
+  </div>
+  <div class="screen-body">
+    <div class="screen-title">ממה מתחמקים היום?</div>
+    <div class="screen-subtitle">בחר את סוג האירוע שאין לך כוח אליו</div>
+    <div class="card-grid" id="event-grid">
+      <div class="glass-card" data-event="wedding"><span class="card-emoji">&#x1F492;</span><div class="card-label">חתונה</div></div>
+      <div class="glass-card" data-event="birthday"><span class="card-emoji">&#x1F382;</span><div class="card-label">יום הולדת</div></div>
+      <div class="glass-card" data-event="work"><span class="card-emoji">&#x1F4BC;</span><div class="card-label">עבודה / ישיבה</div></div>
+      <div class="glass-card" data-event="family"><span class="card-emoji">&#x1F468;&#x200D;&#x1F469;&#x200D;&#x1F467;&#x200D;&#x1F466;</span><div class="card-label">ארוחה משפחתית</div></div>
+      <div class="glass-card" data-event="social"><span class="card-emoji">&#x1F37B;</span><div class="card-label">מפגש חברים</div></div>
+      <div class="glass-card" data-event="date"><span class="card-emoji">&#x1F495;</span><div class="card-label">דייט</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== SCREEN 3: TIME SELECTION ===== -->
+<div id="screen-time" class="screen">
+  <header class="app-header">
+    <div class="logo"><span class="logo-emoji">&#x1FAE3;</span><span>תרצני</span></div>
+    <button class="gear-btn" onclick="showScreen('screen-settings')">&#x2699;&#xFE0F;</button>
+  </header>
+  <div class="stepper">
+    <div class="step"><div class="step-circle done" id="sc1b"><span class="material-symbols-outlined">check</span></div></div>
+    <div class="step-line done" id="sl1b"></div>
+    <div class="step"><div class="step-circle active" id="sc2b"><span class="material-symbols-outlined">schedule</span></div></div>
+    <div class="step-line" id="sl2b"></div>
+    <div class="step"><div class="step-circle" id="sc3b"><span class="material-symbols-outlined">distance</span></div></div>
+  </div>
+  <div class="screen-body">
+    <div class="screen-title">עוד כמה זמן? &#x23F3;</div>
+    <div class="screen-subtitle">מתי האירוע שאתה רוצה להתחמק ממנו?</div>
+    <div class="card-grid" id="time-grid">
+      <div class="glass-card" data-time="30min"><span class="card-emoji">&#x23F0;</span><div class="card-label">30 דקות</div><span class="urgency-tag urgent">דחוף</span></div>
+      <div class="glass-card" data-time="2hours"><span class="card-emoji">&#x1F550;</span><div class="card-label">שעתיים</div><span class="urgency-tag urgent">דחוף</span></div>
+      <div class="glass-card" data-time="today"><span class="card-emoji">&#x1F4C5;</span><div class="card-label">היום</div><span class="urgency-tag urgent">דחוף</span></div>
+      <div class="glass-card" data-time="tomorrow"><span class="card-emoji">&#x1F305;</span><div class="card-label">מחר</div><span class="urgency-tag planned">מתוכנן</span></div>
+      <div class="glass-card" data-time="week"><span class="card-emoji">&#x1F4C6;</span><div class="card-label">שבוע</div><span class="urgency-tag planned">מתוכנן</span></div>
+      <div class="glass-card" data-time="month"><span class="card-emoji">&#x1F5D3;</span><div class="card-label">חודש</div><span class="urgency-tag planned">מתוכנן</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== SCREEN 4: CLOSENESS SELECTION ===== -->
+<div id="screen-closeness" class="screen">
+  <header class="app-header">
+    <div class="logo"><span class="logo-emoji">&#x1FAE3;</span><span>תרצני</span></div>
+    <button class="gear-btn" onclick="showScreen('screen-settings')">&#x2699;&#xFE0F;</button>
+  </header>
+  <div class="stepper">
+    <div class="step"><div class="step-circle done"><span class="material-symbols-outlined">check</span></div></div>
+    <div class="step-line done"></div>
+    <div class="step"><div class="step-circle done"><span class="material-symbols-outlined">check</span></div></div>
+    <div class="step-line done"></div>
+    <div class="step"><div class="step-circle active"><span class="material-symbols-outlined">distance</span></div></div>
+  </div>
+  <div class="screen-body">
+    <div class="screen-title">רמת קירבה? &#x1FAC2;</div>
+    <div class="screen-subtitle">כמה קרובים אליך האנשים שצריך לתרץ להם?</div>
+    <div class="card-grid single-col" id="closeness-grid">
+      <div class="glass-card" data-closeness="close">
+        <span class="card-emoji">&#x2764;&#xFE0F;</span>
+        <div class="card-label">קרוב/ה מאוד</div>
+        <div class="card-desc">משפחה, חבר/ה קרוב/ה - לא צריך לשקר, רק לעגל פינות</div>
+      </div>
+      <div class="glass-card" data-closeness="acquaintance">
+        <span class="card-emoji">&#x1F91D;</span>
+        <div class="card-label">מכר/ה</div>
+        <div class="card-desc">עמית, שכן, חבר רחוק - צריך תירוץ רשמי ומשכנע</div>
+      </div>
+    </div>
+  </div>
+  <div class="summary-bar" id="summary-bar">
+    <div class="summary-chips" id="summary-chips"></div>
+    <button class="cta-btn" id="generate-btn">&#x1F3AF; תרצני!</button>
+  </div>
+</div>
+
+<!-- ===== SCREEN 5: RESULTS ===== -->
+<div id="screen-results" class="screen">
+  <div class="confetti-container" id="confetti-container"></div>
+  <header class="app-header">
+    <div class="logo"><span class="logo-emoji">&#x1FAE3;</span><span>תרצני</span></div>
+    <button class="gear-btn" onclick="showScreen('screen-settings')">&#x2699;&#xFE0F;</button>
+  </header>
+  <div class="screen-body">
+    <div class="screen-title">&#x1F389; הנה התירוצים שלך</div>
+    <div class="screen-subtitle">בחר את התירוץ המושלם והתחל להשתמש בו</div>
+    <div class="context-badges" id="context-badges"></div>
+    <div id="results-list"></div>
+    <div class="bottom-actions">
+      <button class="new-excuse-btn" onclick="resetApp()">תירוץ חדש</button>
+      <div class="disclaimer">האפליקציה מיועדת לבידור בלבד. השימוש בתירוצים על אחריותך.</div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== SCREEN 6: FOLLOW-UP ===== -->
+<div id="screen-followup" class="screen">
+  <header class="app-header">
+    <button class="back-btn" onclick="showScreen('screen-results')"><span class="material-symbols-outlined">arrow_forward</span> חזרה</button>
+    <div class="logo"><span>תרצני</span></div>
+    <div style="width:40px"></div>
+  </header>
+  <div class="screen-body">
+    <div class="screen-title">מה אם ישאלו שאלות?</div>
+    <div class="screen-subtitle">הכנו לך תשובות לשאלות המבאסות</div>
+    <div class="followup-original" id="followup-excuse-text"></div>
+    <div id="followup-qa-list"></div>
+  </div>
+</div>
+
+<!-- ===== SCREEN 7: SHARE (Bottom Sheet) ===== -->
+<div class="share-overlay" id="share-overlay"></div>
+<div class="share-sheet" id="share-sheet">
+  <div class="share-handle"></div>
+  <div class="share-preview" id="share-preview-text"></div>
+  <button class="share-primary" id="share-whatsapp">&#x1F4AC; שלח בוואטסאפ</button>
+  <button class="share-secondary" id="share-anon">&#x1F3AD; שלח אנונימית</button>
+  <div class="share-icons">
+    <button class="share-icon-btn" id="share-sms"><span class="s-icon">&#x1F4F1;</span>SMS</button>
+    <button class="share-icon-btn" id="share-copy-btn"><span class="s-icon">&#x1F4CB;</span>העתק</button>
+    <button class="share-icon-btn" id="share-more"><span class="s-icon">&#x1F517;</span>עוד</button>
+  </div>
+</div>
+
+<!-- ===== SCREEN 8: SETTINGS ===== -->
+<div id="screen-settings" class="screen">
+  <header class="app-header">
+    <button class="back-btn" id="settings-back-btn"><span class="material-symbols-outlined">arrow_forward</span> חזרה</button>
+    <div class="logo"><span>הגדרות</span></div>
+    <div style="width:40px"></div>
+  </header>
+  <div class="screen-body">
+    <div class="settings-profile">
+      <div class="settings-avatar">&#x1F464;</div>
+      <div class="settings-name">משתמש אנונימי</div>
+      <div class="settings-plan">Free Plan</div>
+    </div>
+    <div class="premium-banner">
+      <div class="pb-icon">&#x1F525;</div>
+      <div>
+        <div class="pb-title">שדרג לפרימיום</div>
+        <div class="pb-desc">תירוצים בלתי מוגבלים, תירוצי AI ועוד</div>
+      </div>
+    </div>
+    <div class="settings-group">
+      <div class="settings-group-title">כללי</div>
+      <div class="settings-list">
+        <div class="settings-item">
+          <div class="si-right"><span class="si-icon">&#x1F319;</span><span class="si-label">מצב כהה</span></div>
+          <button class="toggle on" id="toggle-dark" onclick="toggleSwitch(this)"><div class="toggle-knob"></div></button>
+        </div>
+        <div class="settings-item">
+          <div class="si-right"><span class="si-icon">&#x1F30D;</span><span class="si-label">שפה</span></div>
+          <span class="si-value">עברית</span>
+        </div>
+        <div class="settings-item">
+          <div class="si-right"><span class="si-icon">&#x1F514;</span><span class="si-label">התראות</span></div>
+          <button class="toggle" id="toggle-notif" onclick="toggleSwitch(this)"><div class="toggle-knob"></div></button>
+        </div>
+      </div>
+    </div>
+    <div class="settings-group">
+      <div class="settings-group-title">תוכן</div>
+      <div class="settings-list">
+        <div class="settings-item">
+          <div class="si-right"><span class="si-icon">&#x1F4DC;</span><span class="si-label">היסטוריית תירוצים</span></div>
+          <span class="si-value">בקרוב</span>
+        </div>
+        <div class="settings-item">
+          <div class="si-right"><span class="si-icon">&#x2B50;</span><span class="si-label">מועדפים</span></div>
+          <span class="si-value">בקרוב</span>
+        </div>
+      </div>
+    </div>
+    <div class="settings-group">
+      <div class="settings-group-title">תמיכה</div>
+      <div class="settings-list">
+        <div class="settings-item">
+          <div class="si-right"><span class="si-icon">&#x2B50;</span><span class="si-label">דרג את האפליקציה</span></div>
+          <span class="material-symbols-outlined" style="color:var(--text3);font-size:1.1rem">chevron_left</span>
+        </div>
+        <div class="settings-item">
+          <div class="si-right"><span class="si-icon">&#x1F4E7;</span><span class="si-label">צור קשר</span></div>
+          <span class="material-symbols-outlined" style="color:var(--text3);font-size:1.1rem">chevron_left</span>
+        </div>
+      </div>
+    </div>
+    <button class="signout-btn">התנתק</button>
+  </div>
+</div>
+
+<!-- ===== INSTALL BANNER ===== -->
+<div class="install-banner" id="install-banner">
+  <div class="ib-text">התקן את תרצני למסך הבית</div>
+  <button class="ib-btn" id="install-btn">התקן</button>
+  <button class="ib-close" onclick="document.getElementById('install-banner').classList.remove('visible')">&times;</button>
+</div>
+
+<script>
+// === EXCUSE DATABASE START ===
+const DB = {
+
+  // ============================
+  // 💒 חתונה — WEDDING
+  // ============================
+  wedding: {
+    icon: `💒`,
+    label: `חתונה`,
+    excuses: {
+
+      close_urgent: [
+        {
+          text: `אני כל כך מצטער, פשוט קיבלתי טלפון שאמא שלי התעלפה ואני חייב לרוץ לבית החולים. אני מת מרצון להיות שם אבל אין לי ברירה`,
+          rating: 9.2,
+          followups: [
+            { q: `מה קרה לה?`, a: `לא ברור עדיין, אמרו שהתעלפה בבית והשכנים הזעיקו אמבולנס. אני בדרך לשם עכשיו` },
+            { q: `באיזה בית חולים?`, a: `לקחו אותה לאיכילוב, אני נוסע לשם ישר` },
+            { q: `אתה רוצה שמישהו יבוא איתך?`, a: `לא, תודה, אחי כבר בדרך. אני אעדכן ברגע שאדע משהו` }
+          ]
+        },
+        {
+          text: `אני ממש מתנצל, יש לי דליפת מים רצינית בבית והשכנים מלמטה כבר מתקשרים בהיסטריה. אני חייב לטפל בזה עכשיו`,
+          rating: 8.0,
+          followups: [
+            { q: `אתה לא יכול לקרוא לשרברב?`, a: `קראתי, הוא בדרך, אבל אני חייב להיות פה כי המים זורמים לשכנים ואני צריך לסגור את הברז הראשי` },
+            { q: `זה לא יכול לחכות?`, a: `ממש לא, המים כבר הגיעו לדירה מלמטה ואם אני לא אטפל בזה עכשיו זה יהיה נזק של עשרות אלפים` },
+            { q: `כמה זמן זה ייקח?`, a: `אין לי מושג, השרברב אמר שזה יכול לקחת שעות. אני ממש מצטער, שמרו לי חתיכת עוגה` }
+          ]
+        },
+        {
+          text: `אני מרגיש ממש ממש לא טוב, יש לי חום גבוה והקאות מהבוקר. אני פשוט לא במצב לצאת מהבית`,
+          rating: 7.0,
+          followups: [
+            { q: `מה יש לך?`, a: `נראה לי שזה איזה וירוס קיבה, מהבוקר אני לא מפסיק להקיא. אין מצב שאני יכול לשבת בחתונה ככה` },
+            { q: `אתה בטוח שאתה לא יכול לבוא אפילו לקצת?`, a: `אני ממש לא יכול, כל חמש דקות אני רץ לשירותים. אני לא רוצה גם להדביק אנשים` },
+            { q: `הלכת לרופא?`, a: `כן, אמר לי לנוח ולשתות הרבה. נתן לי משהו נגד בחילות אבל זה עדיין לא עובד` }
+          ]
+        }
+      ],
+
+      close_planned: [
+        {
+          text: `תשמע, אני ממש חייב לספר לך משהו ואני מקווה שתבין. יש לי טיסה לחוץ לארץ באותו תאריך בדיוק שאי אפשר לשנות אותה. הזמנתי את הטיסות לפני חודשים ואין ביטול. אני אפצה אותך, מבטיח`,
+          rating: 9.0,
+          followups: [
+            { q: `לאן אתה טס?`, a: `לברלין, יש לי כנס מקצועי שאני מרצה בו. הזמינו אותי לפני חצי שנה ואני לא יכול לבטל` },
+            { q: `אתה לא יכול לשנות את הטיסה?`, a: `בדקתי, אין אפשרות. זה כרטיס לא גמיש ואני מפסיד את כל הכסף אם אני מבטל` },
+            { q: `אבל זו החתונה שלי...`, a: `אני יודע ואני שבור על זה. אני רוצה לעשות לכם ארוחת ערב מיוחדת כשאני חוזר, רק אתם ואני, ולחגוג כמו שצריך` }
+          ]
+        },
+        {
+          text: `אני מרגיש נורא לספר לך את זה, אבל סבתא שלי עוברת ניתוח באותו יום ואני חייב להיות איתה. היא ביקשה שאני אהיה לידה`,
+          rating: 8.3,
+          followups: [
+            { q: `איזה ניתוח?`, a: `ניתוח להחלפת מפרק ירך. היא ממש מפחדת והיא ביקשה שרק אני אהיה שם` },
+            { q: `אין מישהו אחר שיכול להיות איתה?`, a: `ההורים שלי בחוץ לארץ ואחי גר בצפון. אני הכי קרוב אליה ויש לנו קשר מיוחד` },
+            { q: `אולי תבוא אחרי הניתוח?`, a: `הניתוח ארוך ואני לא רוצה לעזוב אותה בהתאוששות. אני מקווה שתבינו, זה שובר אותי` }
+          ]
+        },
+        {
+          text: `יש לי התחייבות שאני פשוט לא יכול לבטל באותו שבוע. אני אמור לתת הרצאה מרכזית בכנס מקצועי שרשום עליה כבר חצי שנה`,
+          rating: 7.2,
+          followups: [
+            { q: `מה הכנס?`, a: `כנס טכנולוגי שאני מציג בו פרויקט שעבדתי עליו שנה. אם אני מבטל זה פוגע לי בקריירה` },
+            { q: `אי אפשר לדחות?`, a: `ממש לא, לוח הזמנים נקבע מראש ויש מאות אנשים שנרשמו. אני לא יכול לשנות` },
+            { q: `חבל שאתה מפספס`, a: `אני יודע, אני ממש עצוב. אני רוצה להביא לכם מתנה שתפצה ולעשות מסיבת חתונה פרטית ביחד` }
+          ]
+        }
+      ],
+
+      acquaintance_urgent: [
+        {
+          text: `היי, אני ממש מתנצל אבל נקלעתי למצב חירום רפואי במשפחה ואני לא יכול להגיע הערב. מזל טוב ענק`,
+          rating: 9.0,
+          followups: [
+            { q: `מה קרה?`, a: `אבא שלי הובהל לבית חולים, אני מעדיף לא להיכנס לפרטים. מזל טוב שוב ואני מקווה שתהיה חתונה מדהימה` },
+            { q: `אתה בסדר?`, a: `כן, תודה ששאלת. מקווה שהכל יסתדר. תיהנו הערב` },
+            { q: `חבל, רצינו אותך שם`, a: `אני יודע, גם אני רציתי להיות. נחגוג ביחד בהזדמנות אחרת` }
+          ]
+        },
+        {
+          text: `מזל טוב! לצערי אני לא אוכל להגיע, תפס אותי וירוס ואני עם חום 39. לא רוצה להדביק חצי חתונה`,
+          rating: 7.8,
+          followups: [
+            { q: `אולי עד הערב תרגיש יותר טוב?`, a: `לא נראה לי, החום עולה מהבוקר. עדיף שלא אסכן אנשים, במיוחד קשישים` },
+            { q: `החלמה מהירה`, a: `תודה רבה, תיהנו הערב ותשמחו את החתן והכלה` }
+          ]
+        },
+        {
+          text: `מזל טוב! אני חייב לנסוע דחוף לצפון בגלל עניין דחוף בעבודה ולא אוכל להגיע הערב. מצטער מאוד`,
+          rating: 6.8,
+          followups: [
+            { q: `מה קרה בעבודה?`, a: `יש תקלה קריטית אצל לקוח שאני האחראי עליו ואני חייב להיות שם פיזית` },
+            { q: `באמת חבל`, a: `אני יודע, ממש רציתי להגיע. מזל טוב שוב ושיהיה לכם ערב נפלא` },
+            { q: `אולי תספיק לבוא אחר כך?`, a: `אני לא חושב, הלקוח בנהריה וזה ייקח לי שעות. אני שולח מתנה בנפרד` }
+          ]
+        }
+      ],
+
+      acquaintance_planned: [
+        {
+          text: `מזל טוב! לצערי לא אוכל להגיע לחתונה. יש לי אירוע משפחתי באותו ערב שנקבע מזמן. מאחל לכם את כל הטוב`,
+          rating: 8.5,
+          followups: [
+            { q: `איזה אירוע?`, a: `בר מצווה של בן דוד. נקבע לפני חודשים ואני לא יכול להחליף` },
+            { q: `חבל, נשמח לראות אותך`, a: `גם אני, אבל ההתחייבות המשפחתית קודמת. מאחל לכם חתונה מושלמת` },
+            { q: `אולי תקפוץ בסוף?`, a: `אני אנסה, אבל אני לא רוצה להבטיח. בכל מקרה מתנה בדרך אליכם` }
+          ]
+        },
+        {
+          text: `מזל טוב! לצערי הרב, אני אהיה בחוץ לארץ באותו תאריך. טיסה שהוזמנה מראש. מאחל לכם חיים מאושרים`,
+          rating: 7.8,
+          followups: [
+            { q: `לאן אתה טס?`, a: `לפראג, חופשה שתכננו כבר חודשים ולא ניתן לשנות` },
+            { q: `מתי אתה חוזר?`, a: `רק בשבוע שאחרי. אני שולח מתנה לפני שאני טס` }
+          ]
+        },
+        {
+          text: `מזל טוב! אני לא אוכל להשתתף כי יש לי קורס מרוכז בדיוק באותו שבוע שאני לא יכול לפספס ממנו אף יום`,
+          rating: 6.5,
+          followups: [
+            { q: `איזה קורס?`, a: `הסמכה מקצועית שאני עובד עליה כבר שנה. חובה להשתתף בכל המפגשים` },
+            { q: `אי אפשר לפספס יום אחד?`, a: `לצערי לא, יש נוכחות חובה ואם מפספסים אפילו יום אחד צריך להתחיל מחדש` },
+            { q: `חבל`, a: `ממש חבל, אני מאחל לכם רק טוב. נחגוג כשנפגש` }
+          ]
+        }
+      ]
+    },
+
+    crazy: {
+      text: `אחי אני לא יכול להגיע לחתונה, קיבלתי הודעה דחופה מהמוסד שאני גויס למשימה חשאית בסוריה. אם אני לא מגיב תוך שעה הם שולחים לי את דורון כביר הביתה. אתה לא רוצה את דורון כביר אצלך בבית, תאמין לי`,
+      rating: 0.3,
+      followups: [
+        { q: `אתה רציני?`, a: `כמובן, אתה חושב שאני ממציא? אני כבר מתלבש בשחור ומשחיר לי את הפנים. מזל טוב, אני אביא לך מגנט מדמשק` },
+        { q: `מאיפה הם הגיעו אליך?`, a: `שמע, פעם אחת עשיתי אסקייפ רום ופתרתי את הכל ב-12 דקות. מאז הם עוקבים אחרי` },
+        { q: `אתה לא נורמלי`, a: `נורמלי? אני אגנט 007 וחצי. ג׳יימס בונד מתקשר אליי לייעוץ` }
+      ]
+    }
+  },
+
+  // ============================
+  // 🎂 יום הולדת — BIRTHDAY
+  // ============================
+  birthday: {
+    icon: `🎂`,
+    label: `יום הולדת`,
+    excuses: {
+
+      close_urgent: [
+        {
+          text: `יום הולדת שמח! אני מרגיש נורא שאני אומר את זה, אבל הילד שלי חולה עם חום גבוה ואני לא יכול להשאיר אותו. הוא בוכה ולא נרגע`,
+          rating: 9.3,
+          followups: [
+            { q: `מה יש לו?`, a: `חום של 39.5 מהבוקר, כנראה דלקת אוזניים. הוא לא מפסיק לבכות` },
+            { q: `אין מישהו שישמור עליו?`, a: `בת הזוג שלי בעבודה ואמא שלי לא בעיר. אני היחיד שפה` },
+            { q: `אולי תביא אותו?`, a: `הוא לא במצב, הוא שוכב במיטה עם חום. אני אפצה אותך, מבטיח. ניפגש ביחד בשבוע` }
+          ]
+        },
+        {
+          text: `יום הולדת שמח! אני נתקע בפקק תאונה מטורף בכביש ואני ממש לא זז. כבר חצי שעה לא זזתי מטר. אני מצטער בטירוף`,
+          rating: 7.8,
+          followups: [
+            { q: `איפה אתה?`, a: `על כביש 4 לכיוון צפון, יש תאונה רצינית וסגרו נתיבים. ווייז מראה שעה וחצי` },
+            { q: `אולי תצא ותיקח מונית?`, a: `אני באמצע הכביש, אין לאן לרדת. ממש אין לי מה לעשות חוץ מלחכות` },
+            { q: `חבל, כולם כבר פה`, a: `אני יודע, אני מת מעצבים. אם זה ייפתח אני רץ אליכם. אני אשלח לך הודעה` }
+          ]
+        },
+        {
+          text: `יום הולדת שמח אהובי! אני ממש מצטער, נפלתי ונקעתי את הקרסול. אני בטיפול נמרץ עם קרח ולא יכול ללכת`,
+          rating: 6.8,
+          followups: [
+            { q: `איך זה קרה?`, a: `ירדתי מהמדרגות בבית ונפלתי. הקרסול נפוח כמו כדורגל` },
+            { q: `הלכת לרופא?`, a: `כן, עשיתי צילום ואמרו שזה נקע חמור. אני עם קרח ותחבושת ואסור לי ללכת` },
+            { q: `מסכן, החלמה מהירה`, a: `תודה, אני ממש עצוב שאני מפספס. ניפגש ברגע שאני יכול ללכת` }
+          ]
+        }
+      ],
+
+      close_planned: [
+        {
+          text: `שמע, אני חייב לספר לך עכשיו כי אני מרגיש רע עם זה. יש לי מילואים בדיוק באותו שבוע ואני לא יכול להשתחרר. כבר ניסיתי הכל`,
+          rating: 9.1,
+          followups: [
+            { q: `אי אפשר לבקש דחייה?`, a: `הגשתי בקשה ודחו אותי. אמרו שזה חובה ואין יוצא מן הכלל` },
+            { q: `לכמה זמן אתה במילואים?`, a: `שבוע שלם, מיום ראשון עד חמישי. אין לי מה לעשות` },
+            { q: `חבל, ממש רציתי אותך שם`, a: `גם אני ממש רוצה, אני אעשה לך יום הולדת פרטי כשאני חוזר. עם עוגה והכל` }
+          ]
+        },
+        {
+          text: `אני מרגיש איום על זה, אבל אני עובר דירה בדיוק באותו יום. כבר שילמתי למובילים ואי אפשר לשנות. אני אפצה אותך בגדול`,
+          rating: 8.0,
+          followups: [
+            { q: `אי אפשר להזיז את המובילים?`, a: `ניסיתי, אין להם יום פנוי עוד חודש ואני חייב לצאת מהדירה עד סוף החודש` },
+            { q: `אולי תבוא אחרי שתסיים?`, a: `ההובלה תיקח כל היום ובערב אני אהיה הרוס. אבל אני רוצה לעשות לך משהו מיוחד ביום אחר` },
+            { q: `לאן אתה עובר?`, a: `דירה חדשה ברמת גן. ברגע שאסתדר אני מזמין אותך לחנוכת בית ויום הולדת מאוחר` }
+          ]
+        },
+        {
+          text: `אני כבר אומר לך עכשיו שבתאריך הזה יש לי נסיעת עבודה שאני לא יכול לבטל. אני מרגיש רע אבל זה מעל הראש שלי`,
+          rating: 7.0,
+          followups: [
+            { q: `לאן נוסע?`, a: `לאילת, כנס של החברה. חובה להשתתף` },
+            { q: `מתי אתה חוזר?`, a: `יומיים אחרי. ברגע שאני חוזר אני בא עם מתנה ועוגה, מבטיח` },
+            { q: `כל שנה אתה עם תירוצים`, a: `אני יודע ואני מרגיש רע על זה. הפעם אני באמת אפצה אותך, יש לי כבר רעיון למתנה` }
+          ]
+        }
+      ],
+
+      acquaintance_urgent: [
+        {
+          text: `יום הולדת שמח! לצערי לא אוכל להגיע, יש לי מצב רפואי שצריך טיפול דחוף. מקווה שתחגוג בגדול`,
+          rating: 8.8,
+          followups: [
+            { q: `מה קרה?`, a: `בעיה שצצה פתאום, מעדיף לא להיכנס לפרטים. אני בטיפול ואני בסדר` },
+            { q: `החלמה מהירה`, a: `תודה רבה, תיהנו הערב` }
+          ]
+        },
+        {
+          text: `יום הולדת שמח! סליחה אבל נתפסתי עם עבודה דחופה שנפלה עליי ואני חייב לסיים עד הלילה. אחגוג איתך בהזדמנות אחרת`,
+          rating: 7.6,
+          followups: [
+            { q: `מה כל כך דחוף?`, a: `דדליין שהעבירו להיום ואני חייב לסיים. אין לי ברירה` },
+            { q: `אולי תבוא בסוף?`, a: `אם אסיים בזמן אני אנסה לקפוץ, אבל אני לא רוצה להבטיח` }
+          ]
+        },
+        {
+          text: `יום הולדת שמח! אני עם חום ולא מרגיש טוב ולא רוצה להדביק את כולם. מאחל לך חגיגה נהדרת`,
+          rating: 6.5,
+          followups: [
+            { q: `החלמה מהירה`, a: `תודה! תיהנו הערב` },
+            { q: `חבל, ציפינו לך`, a: `גם אני רציתי להגיע, אבל לא כדאי עם חום. שנפגש בשבוע הבא` }
+          ]
+        }
+      ],
+
+      acquaintance_planned: [
+        {
+          text: `יום הולדת שמח! לצערי לא אוכל להגיע, יש לי אירוע משפחתי באותו תאריך שנקבע מראש. מאחל לך שנה מדהימה`,
+          rating: 8.5,
+          followups: [
+            { q: `מה האירוע?`, a: `יום נישואין של ההורים שלי, חוגגים בארוחה משפחתית` },
+            { q: `חבל`, a: `ממש חבל, אני מקווה שתהיה חגיגה נהדרת. נחגוג ביחד בהזדמנות` }
+          ]
+        },
+        {
+          text: `יום הולדת שמח! אני לא אהיה בארץ בתאריך הזה. מקווה שתהיה חגיגה מושלמת`,
+          rating: 7.5,
+          followups: [
+            { q: `לאן אתה טס?`, a: `חופשה משפחתית ביוון שתוכננה מראש` },
+            { q: `מתי אתה חוזר?`, a: `עוד שבוע. נפגש אחר כך ונחגוג` }
+          ]
+        },
+        {
+          text: `יום הולדת שמח! לצערי יש לי התחייבות שאני לא יכול לבטל באותו ערב. מאחל לך את כל הטוב`,
+          rating: 6.2,
+          followups: [
+            { q: `מה ההתחייבות?`, a: `ערב של קורס שאני לומד בו, חובת נוכחות` },
+            { q: `אולי פעם הבאה`, a: `בהחלט, מחכה לחגוג איתך` }
+          ]
+        }
+      ]
+    },
+
+    crazy: {
+      text: `אחי אני לא יכול להגיע ליום ההולדת, אילון מאסק שלח לי הודעה אישית שהוא צריך אותי לטיסה ראשונה למאדים. הוא אמר שהם צריכים מישהו ישראלי על החללית כי רק ישראלי יכול לנהל ויכוח עם חייזרים בלי להתרגש`,
+      rating: 0.3,
+      followups: [
+        { q: `אתה מטורף?`, a: `מטורף? אני אסטרונאוט. הנה, כבר לבשתי את החליפה הכתומה ואני עושה סלפי ליד הרקטה` },
+        { q: `ולמה דווקא אתה?`, a: `כי אני הישראלי היחיד שיכול לעשות חומוס במיקרוגרביטציה. זה כישרון נדיר` },
+        { q: `מתי אתה חוזר?`, a: `עוד שנתיים. אני אביא לך אבן מהמאדים, מה הצבע שאתה רוצה? שם יש רק אדום אבל אני אנסה` }
+      ]
+    }
+  },
+
+  // ============================
+  // 💼 עבודה / ישיבה — WORK
+  // ============================
+  work: {
+    icon: `💼`,
+    label: `עבודה`,
+    excuses: {
+
+      close_urgent: [
+        {
+          text: `אני ממש מצטער, הילד שלי חולה וגן הילדים התקשרו שאני חייב לאסוף אותו עכשיו. אין לי אף אחד אחר שיכול. אני אתעדכן מהבית`,
+          rating: 9.1,
+          followups: [
+            { q: `אין מישהו אחר שיכול לאסוף?`, a: `בת הזוג שלי באמצע פגישה קריטית ואמא שלי לא בעיר. אני היחיד שזמין` },
+            { q: `מתי תחזור?`, a: `אני אקח אותו לרופא ואראה מה המצב. אני אעדכן ברגע שאני יודע` },
+            { q: `אתה יכול להצטרף מרחוק?`, a: `אני אנסה להתחבר מהטלפון ברגע שהילד ירגע. אשלח סיכום של מה שהספקתי` }
+          ]
+        },
+        {
+          text: `יש לי בעיה דחופה עם האוטו, הוא נתקע באמצע הדרך ואני מחכה לגרר. אני לא חושב שאני אספיק להגיע`,
+          rating: 7.9,
+          followups: [
+            { q: `מה קרה לאוטו?`, a: `המנוע כבה פתאום באמצע הנסיעה, כנראה בעיה חשמלית. כבר הזמנתי גרר` },
+            { q: `אתה יכול לקחת מונית?`, a: `אני חייב לחכות לגרר כי האוטו באמצע הכביש. ברגע שהוא מגיע אני אראה אם אני מספיק` },
+            { q: `אתה צריך עזרה?`, a: `תודה, הגרר בדרך. אני אתעדכן ברגע שהמצב יתברר` }
+          ]
+        },
+        {
+          text: `קמתי עם מיגרנה רצינית ואני לא מסוגל לפתוח את העיניים. אני לוקח יום מחלה ומקווה שמחר אהיה בסדר`,
+          rating: 6.8,
+          followups: [
+            { q: `אתה יכול לעבוד מהבית?`, a: `אני באמת לא מסוגל להסתכל על מסך, כל פעם שאני מנסה זה מחמיר` },
+            { q: `יש פגישות שצריך להזיז?`, a: `כן, יש לי פגישה בשלוש, אם מישהו יכול לכסות אותי אני אעביר את החומרים` },
+            { q: `מתי את חושב שתהיה בסדר?`, a: `בדרך כלל זה עובר לי תוך יום. מחר בבוקר אני אעדכן` }
+          ]
+        }
+      ],
+
+      close_planned: [
+        {
+          text: `רציתי לעדכן מראש שיש לי תור לרופא מומחה שחיכיתי לו שלושה חודשים ואני לא יכול לדחות אותו. אני אפספס את הישיבה`,
+          rating: 9.0,
+          followups: [
+            { q: `איזה רופא?`, a: `רופא עיניים מומחה, יש לי בעיה שצריך לטפל בה ולא ניתן לדחות` },
+            { q: `אי אפשר לקבוע ליום אחר?`, a: `ניסיתי, התור הבא הוא עוד ארבעה חודשים. ממש אין לי ברירה` },
+            { q: `אתה יכול לעבוד אחרי?`, a: `בטח, אני אחזור אחרי התור ואשלים את מה שהחסרתי` }
+          ]
+        },
+        {
+          text: `אני צריך לקחת יום חופש באותו תאריך. יש לי סגירה על דירה ואני חייב להיות נוכח אצל עורך הדין. הזיזו את זה חודשים`,
+          rating: 8.2,
+          followups: [
+            { q: `אי אפשר לעשות את זה בזמן אחר?`, a: `לצערי לא, הצד השני זמין רק באותו יום ואם לא חותמים עכשיו העסקה מתבטלת` },
+            { q: `כמה זמן זה ייקח?`, a: `חצי יום בערך, יש הרבה ניירת לחתום. אני אחזור אחרי הצהריים אם צריך` },
+            { q: `בסדר, תעדכן אותנו`, a: `בטח, אני אשאיר את הטלפון פתוח למקרה שיש משהו דחוף` }
+          ]
+        },
+        {
+          text: `יש לי טיפול שיניים גדול שנקבע מראש ואני לא יכול לדחות אותו. אני אגיע אחרי הצהריים`,
+          rating: 7.0,
+          followups: [
+            { q: `כמה זמן הטיפול?`, a: `שעתיים לפחות, זה טיפול שורש. הרופא אמר שזה דחוף` },
+            { q: `אי אפשר אחרי העבודה?`, a: `הקליניקה סוגרת מוקדם ואין תורים בשעות אחרות` },
+            { q: `בסדר, החלמה מהירה`, a: `תודה, אני אתעדכן על מה שהחסרתי ברגע שאחזור` }
+          ]
+        }
+      ],
+
+      acquaintance_urgent: [
+        {
+          text: `אני מתנצל, נאלצתי לעזוב בגלל מקרה חירום אישי. אעדכן ברגע שאוכל`,
+          rating: 9.0,
+          followups: [
+            { q: `הכל בסדר?`, a: `כרגע לא יכול להרחיב, אני אעדכן בהמשך. תודה על ההבנה` },
+            { q: `מתי תחזור?`, a: `אני מקווה שמחר, אעדכן בהקדם` }
+          ]
+        },
+        {
+          text: `אני מצטער, יש לי מצב בריאותי שמצריך אותי להישאר בבית היום. אני אשלים את העבודה מרחוק`,
+          rating: 7.8,
+          followups: [
+            { q: `מה יש לך?`, a: `לא מרגיש טוב, כנראה משהו שאכלתי. מקווה שזה יעבור מהר` },
+            { q: `אתה יכול להצטרף לשיחה?`, a: `אני אנסה, אבל אני לא מבטיח. אשלח את העדכונים שלי במייל` }
+          ]
+        },
+        {
+          text: `לא אוכל להגיע לישיבה, התאומים שלי לא מרגישים טוב ואני חייב להישאר איתם. אשלים מאוחר יותר`,
+          rating: 6.5,
+          followups: [
+            { q: `אין מישהו שישמור?`, a: `לא בהתראה כזו קצרה, כולם תפוסים` },
+            { q: `מתי תוכל להשלים?`, a: `אחרי הצהריים אני מקווה, כשבת הזוג תחזור` }
+          ]
+        }
+      ],
+
+      acquaintance_planned: [
+        {
+          text: `רציתי ליידע מראש שלא אוכל להשתתף בישיבה, יש לי התחייבות אישית שנקבעה לפני כן ואינני יכול לשנות`,
+          rating: 8.5,
+          followups: [
+            { q: `תוכל לשלוח את העדכונים שלך?`, a: `בהחלט, אשלח סיכום מפורט לפני הישיבה` },
+            { q: `אולי נזיז את הישיבה?`, a: `אני לא רוצה לעכב את כולם, תתקדמו ואני אתעדכן אחר כך` }
+          ]
+        },
+        {
+          text: `לא אוכל להגיע לישיבה בתאריך הזה, אני אהיה ביום עיון מקצועי שנרשמתי אליו. אשלח סיכום של הנושאים שלי מראש`,
+          rating: 7.6,
+          followups: [
+            { q: `איפה יום העיון?`, a: `במלון דן בתל אביב, כנס שנתי בתחום שלי` },
+            { q: `אתה יכול לשלוח את המצגת?`, a: `בטח, אעביר אותה יום לפני כדי שיהיה זמן לעבור עליה` }
+          ]
+        },
+        {
+          text: `אני מנצל יום חופש באותו תאריך שתוכנן מראש. אשלח את כל החומרים שלי לפני הישיבה`,
+          rating: 6.3,
+          followups: [
+            { q: `אפשר לקבוע ליום אחר?`, a: `אם זה מתאים לכולם, אני גמיש בימים אחרים` },
+            { q: `תשאיר סיכום?`, a: `בטח, אכין מסמך מסודר ואשלח לכל המשתתפים` }
+          ]
+        }
+      ]
+    },
+
+    crazy: {
+      text: `אני לא יכול להגיע לישיבה כי הכיסאות במשרד פתחו במרד מזוין. הם נעלו את הדלתות ותלו שלט שכתוב עליו "לא נסובב יותר". הכיסא של המנכ"ל מנהל את המשא ומתן ודורש תנאי פנסיה`,
+      rating: 0.3,
+      followups: [
+        { q: `מה אתה מדבר?`, a: `שמע, הם מאורגנים. יש להם ועד עובדים, הכיסא מהקומה השלישית הוא יושב ראש. הם דורשים ריפוד חדש ושמן לגלגלים` },
+        { q: `אתה בסדר?`, a: `אני מסתתר מתחת לשולחן. הכיסא הארגונומי שלי בגד בי ועבר לצד שלהם. אני שבור` },
+        { q: `אולי תבוא בכל זאת?`, a: `אני לא יכול, חוסמים את הכניסה. שלחנו משא ומתן אבל הם דורשים גם חופשה של שבועיים. כיסאות של היום, אתה מבין` }
+      ]
+    }
+  },
+
+  // ============================
+  // 👨‍👩‍👧‍👦 ארוחה משפחתית — FAMILY
+  // ============================
+  family: {
+    icon: `👨‍👩‍👧‍👦`,
+    label: `ארוחה משפחתית`,
+    excuses: {
+
+      close_urgent: [
+        {
+          text: `אמא, אני ממש מצטער, קיבלתי קריאת חירום מהעבודה ואני חייב לנסוע למשרד עכשיו. תקלה קריטית במערכת ואני היחיד שיכול לתקן`,
+          rating: 9.0,
+          followups: [
+            { q: `מה, עכשיו? אנחנו באמצע ארוחה`, a: `אני יודע ואני מרגיש נורא. המנהל התקשר בעצמו, המערכת קרסה ויש לקוחות שלא יכולים לעבוד` },
+            { q: `זה לא יכול לחכות?`, a: `ממש לא, כל דקה שעוברת זה כסף שנשרף. אני אחזור ברגע שזה מסתדר` },
+            { q: `תמיד העבודה, מתי תשים משפחה קודם?`, a: `את צודקת ואני מצטער. אני מבטיח שזה חד פעמי. אני אפצה ונעשה ארוחה רק לנו` }
+          ]
+        },
+        {
+          text: `אני מרגיש ממש רע, יש לי כאבי בטן חזקים מהבוקר. אני מעדיף לא לבוא ולהדביק את כולם`,
+          rating: 7.8,
+          followups: [
+            { q: `שוב בטן? מה אכלת?`, a: `לא יודע, אולי איזה משהו מאתמול. הבטן לא מפסיקה` },
+            { q: `שתה תה נענע`, a: `כבר ניסיתי הכל. אני פשוט צריך לנוח. אני אתקשר מחר` },
+            { q: `אולי תבוא ורק לא תאכל?`, a: `ממש לא מצב, אני קרוב לשירותים כל הזמן. מצטער` }
+          ]
+        },
+        {
+          text: `סליחה, חברה טובה שלי עוברת משבר ואני צריך להיות לידה עכשיו. היא ממש לא בסדר ואין לה מישהו אחר`,
+          rating: 6.8,
+          followups: [
+            { q: `מה קרה לה?`, a: `היא ובן הזוג שלה נפרדו הלילה והיא ממש לא במצב. אני לא יכול לעזוב אותה ככה` },
+            { q: `היא לא יכולה להתקשר למישהו אחר?`, a: `אני החברה הכי קרובה שלה ואני הראשונה שהיא פנתה אליה. אני לא יכולה להגיד לא` },
+            { q: `ואנחנו לא חשובים?`, a: `אתם הכי חשובים, אבל היא במצב חירום רגשי. אני אבוא ביום שישי לפצות` }
+          ]
+        }
+      ],
+
+      close_planned: [
+        {
+          text: `אמא, אני חייב לנסוע עם העבודה בדיוק בסוף השבוע הזה. כבר ניסיתי לשנות ואין אפשרות. אני אבוא בשבוע שאחרי בטוח`,
+          rating: 8.8,
+          followups: [
+            { q: `לאן אתה נוסע?`, a: `לאילת, כנס שנתי של החברה. חובת השתתפות` },
+            { q: `עוד פעם עבודה בסוף שבוע?`, a: `אני יודע, גם אני לא שמח מזה. אבל זה פעם בשנה ואני חייב להיות שם` },
+            { q: `אי אפשר שמישהו אחר ייסע?`, a: `אני המציג הראשי בכנס, אין לי ממש ברירה. אני אביא לך משהו מאילת` }
+          ]
+        },
+        {
+          text: `סבא, אני מצטער אבל יש לי בחינה גדולה בדיוק ביום שישי ואני חייב ללמוד כל סוף השבוע. אם לא אעבור את הבחינה אני מפסיד את הקורס`,
+          rating: 8.0,
+          followups: [
+            { q: `באיזה מקצוע?`, a: `חשבונאות מתקדמת, הבחינה הכי קשה בקורס. אני חייב ציון 70 לפחות` },
+            { q: `אי אפשר ללמוד ולגם לבוא?`, a: `אני צריך כל שעה פנויה, החומר מטורף. אני מבטיח לבוא בשבוע שאחרי` },
+            { q: `בהצלחה`, a: `תודה, אני אצטרך את זה. אני אתקשר אחרי הבחינה לספר איך היה` }
+          ]
+        },
+        {
+          text: `יש לי חתונה של חבר טוב בדיוק באותו ערב ואני כבר אישרתי הגעה. מצטער שאני לא מצליח לתאם`,
+          rating: 6.8,
+          followups: [
+            { q: `של מי החתונה?`, a: `של דני מהצבא, חבר ממש קרוב. כבר אישרתי הגעה לפני חודש` },
+            { q: `תבוא לפני החתונה`, a: `החתונה מתחילה מוקדם ואני צריך להתכונן. אבל אני אבוא ביום שישי הבא` },
+            { q: `המשפחה תמיד אחרונה`, a: `זה ממש לא ככה, לרוב אני בא. הפעם פשוט יש התנגשות ואני אפצה` }
+          ]
+        }
+      ],
+
+      acquaintance_urgent: [
+        {
+          text: `תודה על ההזמנה, אבל נקלעתי למצב דחוף ואני לא אוכל להגיע. מתנצל על ההתראה הקצרה`,
+          rating: 8.8,
+          followups: [
+            { q: `מה קרה?`, a: `עניין משפחתי דחוף שצץ פתאום. מעדיף לא להיכנס לפרטים, סליחה` },
+            { q: `חבל, הכנו אוכל`, a: `אני מצטער על חוסר הנוחות, ואני מקדיש את ההזדמנות הבאה` }
+          ]
+        },
+        {
+          text: `תודה על ההזמנה. לצערי יש לי שעות נוספות בעבודה היום ולא אוכל להגיע. פעם הבאה בהחלט`,
+          rating: 7.5,
+          followups: [
+            { q: `עד מתי אתה עובד?`, a: `עד מאוחר, יש דדליין שחייבים לעמוד בו` },
+            { q: `חבל, בפעם הבאה`, a: `בהחלט, מחכה להזדמנות הבאה` }
+          ]
+        },
+        {
+          text: `תודה רבה על ההזמנה. אני לא מרגיש טוב ומעדיף לנוח. מקווה שתהיה ארוחה נהדרת`,
+          rating: 6.2,
+          followups: [
+            { q: `מה יש לך?`, a: `כנראה וירוס כלשהו, חום קל וחולשה` },
+            { q: `החלמה מהירה`, a: `תודה, תיהנו` }
+          ]
+        }
+      ],
+
+      acquaintance_planned: [
+        {
+          text: `תודה רבה על ההזמנה. לצערי יש לי תוכנית שנקבעה מראש באותו תאריך ולא אוכל לבוא. אשמח להזדמנות הבאה`,
+          rating: 8.5,
+          followups: [
+            { q: `מה התוכנית?`, a: `אירוע של צד המשפחה של בת הזוג שלי, כבר התחייבנו` },
+            { q: `אולי בפעם אחרת`, a: `בהחלט, תודה על ההבנה` }
+          ]
+        },
+        {
+          text: `תודה על ההזמנה הנעימה. אני אהיה מחוץ לעיר בסוף השבוע הזה. פעם הבאה אני שם`,
+          rating: 7.5,
+          followups: [
+            { q: `לאן אתה נוסע?`, a: `סוף שבוע בצפון שתכננו מראש` },
+            { q: `בהצלחה, תיהנה`, a: `תודה, גם אתם` }
+          ]
+        },
+        {
+          text: `תודה על ההזמנה. לצערי יש לי שמירה במילואים באותו סוף שבוע ולא אוכל להגיע`,
+          rating: 6.5,
+          followups: [
+            { q: `עוד מילואים?`, a: `כן, קיבלתי צו לפני חודש ואין מה לעשות` },
+            { q: `שתהיה שמירה שקטה`, a: `תודה, תיהנו מהארוחה` }
+          ]
+        }
+      ]
+    },
+
+    crazy: {
+      text: `אני לא יכול לבוא לארוחה כי הארון בגדים שלי קרס עליי ואני לכוד מתחתיו. ניסיתי לצעוק אבל החתול רק מסתכל עליי. כבר שעתיים אני פה ואני מתחיל לפתח יחסים עם נעל ימין`,
+      rating: 0.3,
+      followups: [
+        { q: `מה?! אתה בסדר?`, a: `יחסית. יש לי גישה לחצי שקית במבה שנפלה מהמדף אז אני מסתדר. הנעל הימנית מאוד תומכת` },
+        { q: `תתקשר לכבאים!`, a: `ניסיתי אבל הטלפון רחוק מטר. אני מנסה להגיע אליו עם מוט של קולב. החתול חושב שזה משחק` },
+        { q: `אני בא לעזור לך`, a: `תביא גם אוכל כי אני רעב. ואם אתה יכול לדבר עם החתול ולהגיד לו שזה לא מצחיק, אני אעריך` }
+      ]
+    }
+  },
+
+  // ============================
+  // 🍻 מפגש חברים — SOCIAL
+  // ============================
+  social: {
+    icon: `🍻`,
+    label: `מפגש חברים`,
+    excuses: {
+
+      close_urgent: [
+        {
+          text: `אחי, אני ממש מצטער, בת הזוג שלי לא מרגישה טוב ואני צריך להישאר איתה. היא ממש לא במצב והיא צריכה אותי`,
+          rating: 9.0,
+          followups: [
+            { q: `מה יש לה?`, a: `כאבי ראש חזקים מהבוקר ובחילות. היא לא יכולה לקום מהמיטה` },
+            { q: `היא לא יכולה להסתדר לבד?`, a: `היא ביקשה שאני אהיה לידה, היא ממש לא בסדר. לא יכול לעזוב אותה ככה` },
+            { q: `מתי אתה פנוי אז?`, a: `אני מקווה שמחר היא תהיה בסדר. ניתאם ליום אחר, אני חייב לכם ערב` }
+          ]
+        },
+        {
+          text: `נפל עליי דבר דחוף בעבודה ואין לי ברירה, אני חייב לשבת על זה הלילה. דדליין מחר בבוקר ואני עוד לא סיימתי`,
+          rating: 7.8,
+          followups: [
+            { q: `מה כל כך דחוף?`, a: `הלקוח הכי גדול שלנו מאיים לעזוב ואני צריך להכין מצגת למחר בבוקר ראשון` },
+            { q: `בוא לשעה, תתאוורר`, a: `אני ממש לא יכול, כל שעה קריטית. אני עדיין באמצע ויש לי עוד הרבה` },
+            { q: `אתה עובד יותר מדי`, a: `אתה צודק, אחרי זה אני לוקח חופש. נתאם ערב ביחד השבוע` }
+          ]
+        },
+        {
+          text: `אחי, פשוט מת מעייפות ואני לא במצב לצאת. עבדתי 12 שעות היום ואני לא מרגיש את הרגליים`,
+          rating: 6.5,
+          followups: [
+            { q: `בוא, זה יחזיר לך אנרגיה`, a: `ממש לא, אני אירדם על הבירה. עדיף שאנוח ונעשה את זה כשאני בן אדם` },
+            { q: `תמיד אתה עייף`, a: `אני יודע, תקופה קשה בעבודה. מבטיח שזה זמני. שבוע הבא אני שלכם` },
+            { q: `סבבה, פעם הבאה`, a: `בטוח, ואני מזמין. חייב לכם` }
+          ]
+        }
+      ],
+
+      close_planned: [
+        {
+          text: `חבר׳ה, אני חייב לדלג הפעם. יש לי טיול עם המשפחה באותו סוף שבוע שנקבע לפני חודשים. הבטחתי לילדים ואני לא יכול לחזור בי`,
+          rating: 9.0,
+          followups: [
+            { q: `לאן אתם נוסעים?`, a: `צימר בגליל, הילדים מחכים לזה כבר חודש. אני לא יכול לבטל להם` },
+            { q: `תקח אותם ותבוא`, a: `זה סוף שבוע משפחתי, בת הזוג תהרוג אותי אם אברח באמצע. נעשה את זה בשבוע אחר` },
+            { q: `תמיד המשפחה`, a: `שמע, כשיהיו לך ילדים תבין. אני רוצה לבוא, אבל חייב לתעדף. השבוע הבא אני מתפנה` }
+          ]
+        },
+        {
+          text: `אני עושה ניקוי רעלים ודיאטה קיצונית באותו שבוע ואני לא יכול להיות ליד אלכוהול ואוכל. זה שובר אותי אבל חייב להחזיק מעמד`,
+          rating: 7.8,
+          followups: [
+            { q: `בוא ותשתה מים`, a: `אתה מכיר אותי, אם אני מגיע אני לא מחזיק. עדיף שלא אתפתה` },
+            { q: `מתי אתה מסיים?`, a: `עוד שבועיים. אחרי זה אני חוגג איתכם וזה עליי` },
+            { q: `איזה דיאטה?`, a: `רופא שלח אותי לזה, צריך לנקות את הגוף. אם אני שותה בירה אחת זה הורס הכל` }
+          ]
+        },
+        {
+          text: `יש לי תורנות שמירה בבניין בדיוק באותו ערב ואני לא יכול להחליף עם אף אחד. כבר ניסיתי`,
+          rating: 6.8,
+          followups: [
+            { q: `תורנות שמירה? ברצינות?`, a: `כן, ועד הבית החליט על סבב שמירה ואני חטפתי את הערב הזה. אף שכן לא מוכן להחליף` },
+            { q: `פשוט תתעלם`, a: `אחרון שהתעלם קיבל קנס של 500 שקל. לא שווה לי` },
+            { q: `נשנה תאריך?`, a: `אני בעד, מתי נוח לכולם? כל ערב אחר אני שם` }
+          ]
+        }
+      ],
+
+      acquaintance_urgent: [
+        {
+          text: `היי, לצערי לא אוכל להצטרף הערב. צצה לי בעיה אישית שאני חייב לטפל בה. בפעם הבאה`,
+          rating: 8.8,
+          followups: [
+            { q: `הכל בסדר?`, a: `כן, תודה, סתם עניין שדורש את תשומת הלב שלי. תיהנו` },
+            { q: `חבל, חיכינו לך`, a: `גם אני רציתי, פעם הבאה אני שם בטוח` }
+          ]
+        },
+        {
+          text: `לא אוכל לבוא הערב, דברים בעבודה השתבשו ואני חייב להישאר לסיים. מצטער`,
+          rating: 7.5,
+          followups: [
+            { q: `בוא אחר כך`, a: `אני לא יודע מתי אני מסיים, עדיף לא להבטיח` },
+            { q: `בהצלחה`, a: `תודה, תיהנו ונתאם ליום אחר` }
+          ]
+        },
+        {
+          text: `סליחה, לא מרגיש טוב ומעדיף לנוח. תיהנו בלעדיי הערב`,
+          rating: 6.2,
+          followups: [
+            { q: `מה יש לך?`, a: `כנראה וירוס, חום וחולשה. עדיף שאנוח` },
+            { q: `החלמה מהירה`, a: `תודה, תיהנו` }
+          ]
+        }
+      ],
+
+      acquaintance_planned: [
+        {
+          text: `תודה על ההזמנה, לצערי יש לי תוכניות באותו ערב שנקבעו מראש. אשמח להצטרף בפעם הבאה`,
+          rating: 8.5,
+          followups: [
+            { q: `מה התוכניות?`, a: `ערב עם המשפחה שכבר התחייבתי אליו` },
+            { q: `בפעם הבאה בטוח`, a: `בהחלט, תעדכנו אותי` }
+          ]
+        },
+        {
+          text: `היי, לא אוכל להגיע בתאריך הזה, אני נוסע לסוף שבוע בצפון. פעם הבאה אני מצטרף`,
+          rating: 7.5,
+          followups: [
+            { q: `לאן בצפון?`, a: `צימר ליד הכנרת, תכננו את זה כבר מזמן` },
+            { q: `נשנה תאריך?`, a: `אם זה מתאים לכולם אני בעד, כל תאריך אחר עובד לי` }
+          ]
+        },
+        {
+          text: `אני צריך לדלג הפעם, יש לי התחייבות שלא יכול לזוז. נתאם ליום אחר?`,
+          rating: 6.3,
+          followups: [
+            { q: `מה ההתחייבות?`, a: `עניין אישי שקבעתי מראש` },
+            { q: `סבבה, נתאם`, a: `מעולה, שלחו תאריכים ואני אאשר` }
+          ]
+        }
+      ]
+    },
+
+    crazy: {
+      text: `אני לא יכול לצאת הערב כי נטפליקס החזיקה את החשבון שלי כבן ערובה. הם אמרו שאם אני לא מסיים את כל הסדרות ברשימה עד חצות הם מוחקים לי את הפרופיל ואת כל ההמלצות של "המשך צפייה". יש לי עוד 47 פרקים. זה מבצע הצלה`,
+      rating: 0.3,
+      followups: [
+        { q: `אתה מטורף`, a: `מטורף?! אתה יודע כמה זמן לקח לי לבנות את האלגוריתם הזה? הם יודעים בדיוק מה אני רוצה לראות. אני לא יכול לאבד את זה` },
+        { q: `פשוט תפתח חשבון חדש`, a: `חשבון חדש?! ואז הם ימליצו לי על סרטי ילדים ותוכניות בישול? אני לא חי ככה. אני נלחם על הפרופיל שלי` },
+        { q: `אתה יכול להשהות`, a: `אין השהיה, הטיימר רץ. אני כבר בסזון 3 של סדרה שאני לא מכיר. קוראים לה "פינגווינים בחלל" ואני חייב להודות שזה ממש טוב` }
+      ]
+    }
+  },
+
+  // ============================
+  // 💕 דייט — DATE
+  // ============================
+  date: {
+    icon: `💕`,
+    label: `דייט`,
+    excuses: {
+
+      close_urgent: [
+        {
+          text: `אני ממש מצטער על הביטול ברגע האחרון. אמא שלי מרגישה לא טוב ואני חייב לנסוע אליה. היא התקשרה בהיסטריה ואני לא יכול להתעלם`,
+          rating: 9.2,
+          followups: [
+            { q: `מה קרה לה?`, a: `יש לה סחרחורות חזקות ופחדים. היא לבד בבית ומפחדת. אני חייב להיות שם` },
+            { q: `אולי מישהו אחר יכול?`, a: `אחי בחוץ לארץ ואין מישהו אחר. אני הבן היחיד בארץ` },
+            { q: `אז מתי ניפגש?`, a: `מחר? אני רוצה לפצות אותך על הביטול. אני מזמין מסעדה יפה, עליי` }
+          ]
+        },
+        {
+          text: `שמע, אני מת מבושה אבל פיצצתי גלגל בדרך ואני תקוע בצד הכביש. לא חושב שאני מספיק`,
+          rating: 7.8,
+          followups: [
+            { q: `אין לך גלגל רזרבי?`, a: `יש אבל הוא גם תפוח, מסתבר. אני מחכה לשירות דרכים` },
+            { q: `כמה זמן ייקח?`, a: `אמרו חצי שעה עד שעה. אני ממש מצטער, לא תכננתי את זה` },
+            { q: `ניפגש במקום אחר?`, a: `תלוי מתי יגמור, אם מספיק בזמן אני שם. אני אעדכן אותך כל רגע` }
+          ]
+        },
+        {
+          text: `אני מרגיש ממש לא טוב ואני מעדיף לא להגיע ככה. יש לי כאב ראש חזק ובחילות ולא רוצה שתראי אותי במצב הזה`,
+          rating: 6.5,
+          followups: [
+            { q: `מסכן, מה קרה?`, a: `לא יודע, קמתי ככה. אולי משהו שאכלתי אתמול` },
+            { q: `אולי אבוא אלייך?`, a: `אני מעדיף לא, אני ממש לא במצב. ניפגש כשאני מרגיש בן אדם, אני לא רוצה לעשות רושם ראשון כזה` },
+            { q: `סבבה, החלמה מהירה`, a: `תודה, אני אתקשר מחר ונקבע. ממש מצטער` }
+          ]
+        }
+      ],
+
+      close_planned: [
+        {
+          text: `אני חייב להגיד לך משהו, ואני מרגיש רע על זה. יש לי נסיעת עבודה בדיוק בתאריך שקבענו ואני לא יכול לשנות. אני כבר רוצה לקבוע ליום אחר`,
+          rating: 9.0,
+          followups: [
+            { q: `לאן אתה נוסע?`, a: `לקפריסין, כנס של החברה. כבר הוזמנו כרטיסים ומלון` },
+            { q: `לכמה זמן?`, a: `שלושה ימים. אני חוזר ביום חמישי ומאוד רוצה לקבוע ליום שישי` },
+            { q: `ממש חבל`, a: `אני יודע, ואני ממש רוצה להיפגש. מה דעתך על יום שישי כשאני חוזר? אני כבר מזמין מקום` }
+          ]
+        },
+        {
+          text: `יש לי חתונה של חבר קרוב בדיוק באותו ערב שאני מוזמן אליה כבר חודשים. אני ממש רוצה לראות אותך ונקבע ליום אחר?`,
+          rating: 8.2,
+          followups: [
+            { q: `של מי החתונה?`, a: `חבר מהצבא, אנחנו חברים מגיל 18 ואני לא יכול לא להגיע` },
+            { q: `אוקיי, מתי אתה פנוי?`, a: `יום שלישי או רביעי השבוע? אני מתפנה ובוחר מסעדה טובה, עליי` },
+            { q: `סבבה`, a: `מעולה, אני כבר מחפש מקום נחמד. מבטיח שזה יהיה שווה חיכוי` }
+          ]
+        },
+        {
+          text: `ההורים שלי מגיעים לביקור מחוץ לארץ בדיוק בתאריך הזה ואני חייב להיות איתם. הם באים רק פעם בשנה`,
+          rating: 7.2,
+          followups: [
+            { q: `מאיפה הם באים?`, a: `מקנדה, הם גרים שם כבר עשר שנים. רואה אותם רק פעם בשנה ואני חייב להיות שם` },
+            { q: `אני מבינה, אז מתי?`, a: `הם פה שבוע, אז אני פנוי כבר מיום שלישי. נקבע?` },
+            { q: `בטח`, a: `יופי, אני מאוד מחכה. ואולי אפילו תכירי אותם מתישהו` }
+          ]
+        }
+      ],
+
+      acquaintance_urgent: [
+        {
+          text: `היי, אני ממש מתנצל על הביטול הפתאומי. צץ לי עניין משפחתי דחוף ואני לא יכול להגיע. מקווה שנוכל לקבוע ליום אחר`,
+          rating: 8.8,
+          followups: [
+            { q: `הכל בסדר?`, a: `כן, תודה, סתם עניין שצריך טיפול מיידי. אני אשמח לקבוע ליום אחר` },
+            { q: `בסדר, מתי אתה פנוי?`, a: `מה דעתך על השבוע הבא? אני אשמח לפצות על הביטול` }
+          ]
+        },
+        {
+          text: `סליחה, נתפסתי בעבודה עם משהו דחוף ולא אוכל לבוא הערב. אשמח לקבוע מחדש`,
+          rating: 7.5,
+          followups: [
+            { q: `זה דחוף?`, a: `לצערי כן, דדליין שנפל עליי. אני ממש מצטער` },
+            { q: `אוקיי`, a: `אני אתקשר מחר ונקבע. שוב סליחה` }
+          ]
+        },
+        {
+          text: `היי, אני לא מרגיש כל כך טוב ומעדיף לא להגיע ככה. מקווה שתביני ונקבע ליום אחר`,
+          rating: 6.3,
+          followups: [
+            { q: `מה יש לך?`, a: `כנראה איזה וירוס. לא רוצה להדביק אותך` },
+            { q: `החלמה מהירה`, a: `תודה, אני אתקשר כשירגיש יותר טוב` }
+          ]
+        }
+      ],
+
+      acquaintance_planned: [
+        {
+          text: `היי, רציתי לעדכן שלא אוכל להגיע בתאריך שקבענו. יש לי אירוע שנקבע מראש ולא ניתן לשינוי. אשמח לתאם מועד חדש`,
+          rating: 8.5,
+          followups: [
+            { q: `איזה אירוע?`, a: `יום הולדת של ההורים שלי שתכננו כבר מזמן` },
+            { q: `אז מתי אתה פנוי?`, a: `שבוע הבא בערב? אני מאוד אשמח להיפגש` }
+          ]
+        },
+        {
+          text: `היי, אני אהיה בחוץ לארץ בתאריך שקבענו. טיסה שהוזמנה מראש. אשמח לקבוע כשאחזור`,
+          rating: 7.8,
+          followups: [
+            { q: `לאן אתה טס?`, a: `ברצלונה, חופשה שתוכננה לפני חודשים` },
+            { q: `מתי אתה חוזר?`, a: `עוד שבוע, אני אתקשר ברגע שאנחת ונקבע` }
+          ]
+        },
+        {
+          text: `היי, אני צריך לשנות את התאריך שקבענו. יש לי בחינה יום למחרת ואני חייב ללמוד. אשמח לדחות בכמה ימים`,
+          rating: 6.5,
+          followups: [
+            { q: `באיזה מקצוע?`, a: `הסמכה מקצועית שאני עובד עליה כבר חודשים` },
+            { q: `אוקיי, בהצלחה`, a: `תודה, אני מאוד רוצה להיפגש. ניקבע ליום אחרי הבחינה?` }
+          ]
+        }
+      ]
+    },
+
+    crazy: {
+      text: `אני לא יכול לצאת לדייט כי החתול שלי הגיש נגדי צו הרחקה. הוא שכר עורך דין והכל. כנראה כי שיניתי לו את סוג האוכל בלי לשאול. עכשיו אני חייב להישאר בבית ולהעיד מול בית המשפט של החתולים`,
+      rating: 0.3,
+      followups: [
+        { q: `מה?!`, a: `כן, יש לו עורך דין חתולי. עם חליפה קטנה והכל. הוא טוען שהפרתי את חוזה המזון שלנו. אני צריך להביא עדים שהוא אכל גם מהזבל אז הוא לא כזה מפונק` },
+        { q: `אתה רציני?`, a: `השופט הוא הזהב של השכנה. הוא מאוד חמור. פעם שלח כלב למאסר על גניבת עצם. אין פה מקום לצחוק` },
+        { q: `הוא לא חתול רגיל?`, a: `הוא גאון פלילי. בלילה הוא עורך דין, ביום הוא ישן 18 שעות. מצאתי לו חשבון בלינקדאין עם 500 חיבורים. כולם חתולים. אני מפחד` }
+      ]
+    }
+  }
+
+};
+// === EXCUSE DATABASE END ===
+
+
+// ===== APP STATE =====
+const state = { event: null, time: null, closeness: null };
+let previousScreen = 'screen-event';
+let currentShareText = '';
+let deferredInstallPrompt = null;
+
+// ===== TIME TO URGENCY MAPPING =====
+function getUrgency(time) {
+  const urgentTimes = ['30min', '2hours', 'today'];
+  return urgentTimes.includes(time) ? 'urgent' : 'planned';
+}
+
+// ===== CREDIBILITY SCORE =====
+function credScore(rating, urgency, closeness) {
+  let base = rating * 10;
+  if (urgency === 'urgent') base += 3; else base -= 2;
+  if (closeness === 'close') base -= 3; else base += 5;
+  return Math.min(98, Math.max(35, Math.round(base)));
+}
+
+function credColor(score) {
+  if (score >= 75) return 'green';
+  if (score >= 50) return 'amber';
+  return 'red';
+}
+
+function credLabel(score) {
+  if (score >= 85) return '\u05EA\u05D9\u05E8\u05D5\u05E5 \u05DE\u05D1\u05E6\u05E2\u05D9 \u05D1\u05E8\u05DE\u05EA \u05DE\u05D5\u05E1\u05D3';
+  if (score >= 75) return '\u05EA\u05D9\u05E8\u05D5\u05E5 \u05D7\u05D6\u05E7, \u05EA\u05E9\u05EA\u05DE\u05E9 \u05D1\u05D1\u05D9\u05D8\u05D7\u05D5\u05DF';
+  if (score >= 60) return '\u05E1\u05D1\u05D9\u05E8, \u05EA\u05D3\u05D1\u05E8 \u05D1\u05D1\u05D9\u05D8\u05D7\u05D5\u05DF';
+  if (score >= 50) return '\u05E2\u05DC\u05D5\u05DC \u05DC\u05E2\u05D5\u05E8\u05E8 \u05D7\u05E9\u05D3\u05D5\u05EA';
+  return '\u05D9\u05D6\u05D4\u05E8, \u05DE\u05E8\u05D2\u05D9\u05E9 \u05D3\u05D7\u05D5\u05D9';
+}
+
+// ===== TIME LABELS =====
+const timeLabels = {
+  '30min': '30 \u05D3\u05E7\u05D5\u05EA',
+  '2hours': '\u05E9\u05E2\u05EA\u05D9\u05D9\u05DD',
+  'today': '\u05D4\u05D9\u05D5\u05DD',
+  'tomorrow': '\u05DE\u05D7\u05E8',
+  'week': '\u05E9\u05D1\u05D5\u05E2',
+  'month': '\u05D7\u05D5\u05D3\u05E9'
+};
+
+const closenessLabels = {
+  'close': '\u05E7\u05E8\u05D5\u05D1 \u05DE\u05D0\u05D5\u05D3',
+  'acquaintance': '\u05DE\u05DB\u05E8'
+};
+
+// ===== SCREEN NAVIGATION =====
+function showScreen(id) {
+  const allScreens = document.querySelectorAll('.screen');
+  allScreens.forEach(s => s.classList.remove('active'));
+  const target = document.getElementById(id);
+  if (target) {
+    target.classList.add('active');
+    target.scrollTop = 0;
+    window.scrollTo(0, 0);
+  }
+  if (id === 'screen-settings') {
+    // previousScreen already set
+  } else if (id !== 'screen-followup' && id !== 'screen-results') {
+    previousScreen = id;
+  }
+}
+
+// ===== SPLASH HANDLER =====
+function initSplash() {
+  setTimeout(() => {
+    const splash = document.getElementById('splash');
+    splash.style.transition = 'opacity 1s ease';
+    splash.style.opacity = '0';
+    setTimeout(() => {
+      splash.classList.remove('active');
+      splash.style.display = 'none';
+      showScreen('screen-event');
+    }, 1000);
+  }, 2400);
+}
+
+// ===== EVENT SELECTION =====
+function initEventGrid() {
+  const grid = document.getElementById('event-grid');
+  grid.addEventListener('click', (e) => {
+    const card = e.target.closest('.glass-card');
+    if (!card) return;
+    grid.querySelectorAll('.glass-card').forEach(c => c.classList.remove('selected'));
+    card.classList.add('selected');
+    state.event = card.dataset.event;
+    setTimeout(() => showScreen('screen-time'), 300);
+  });
+}
+
+// ===== TIME SELECTION =====
+function initTimeGrid() {
+  const grid = document.getElementById('time-grid');
+  grid.addEventListener('click', (e) => {
+    const card = e.target.closest('.glass-card');
+    if (!card) return;
+    grid.querySelectorAll('.glass-card').forEach(c => c.classList.remove('selected'));
+    card.classList.add('selected');
+    state.time = card.dataset.time;
+    setTimeout(() => showScreen('screen-closeness'), 300);
+  });
+}
+
+// ===== CLOSENESS SELECTION =====
+function initClosenessGrid() {
+  const grid = document.getElementById('closeness-grid');
+  grid.addEventListener('click', (e) => {
+    const card = e.target.closest('.glass-card');
+    if (!card) return;
+    grid.querySelectorAll('.glass-card').forEach(c => c.classList.remove('selected'));
+    card.classList.add('selected');
+    state.closeness = card.dataset.closeness;
+    updateSummaryBar();
+  });
+}
+
+function updateSummaryBar() {
+  const bar = document.getElementById('summary-bar');
+  const chips = document.getElementById('summary-chips');
+  if (state.event && state.time && state.closeness) {
+    const ev = DB[state.event];
+    chips.innerHTML = `<span class="summary-chip">${ev.icon} ${ev.label}</span><span class="summary-chip">${timeLabels[state.time]}</span><span class="summary-chip">${closenessLabels[state.closeness]}</span>`;
+    bar.classList.add('visible');
+  }
+}
+
+// ===== GENERATE RESULTS =====
+function generateResults() {
+  const ev = DB[state.event];
+  const urgency = getUrgency(state.time);
+  const key = `${state.closeness}_${urgency}`;
+  const excuses = ev.excuses[key] || [];
+  const sorted = [...excuses].sort((a, b) => b.rating - a.rating).slice(0, 3);
+  const crazy = ev.crazy;
+
+  const badges = document.getElementById('context-badges');
+  badges.innerHTML = `<span class="context-badge">${ev.icon} ${ev.label}</span><span class="context-badge">${timeLabels[state.time]}</span><span class="context-badge">${closenessLabels[state.closeness]}</span>`;
+
+  const list = document.getElementById('results-list');
+  list.innerHTML = '';
+
+  const rankClasses = ['gold', 'silver', 'bronze'];
+  const rankLabelsArr = ['\u05DE\u05E7\u05D5\u05DD 1', '\u05DE\u05E7\u05D5\u05DD 2', '\u05DE\u05E7\u05D5\u05DD 3'];
+  const rankIcons = ['\u{1F947}', '\u{1F948}', '\u{1F949}'];
+
+  sorted.forEach((excuse, i) => {
+    const score = credScore(excuse.rating, urgency, state.closeness);
+    const color = credColor(score);
+    const label = credLabel(score);
+    const stars = '\u2605'.repeat(Math.min(5, Math.ceil(excuse.rating / 2))) + '\u2606'.repeat(5 - Math.min(5, Math.ceil(excuse.rating / 2)));
+    const card = document.createElement('div');
+    card.className = 'excuse-card';
+    card.innerHTML = `<span class="rank-badge ${rankClasses[i]}">${rankIcons[i]} ${rankLabelsArr[i]}</span><div class="stars">${stars}</div><div class="excuse-text">${excuse.text}</div><div class="cred-meter"><div class="cred-header"><span class="cred-label">\u05D0\u05DE\u05D9\u05E0\u05D5\u05EA</span><span class="cred-pct" style="color:var(--${color})">${score}%</span></div><div class="cred-bar"><div class="cred-fill ${color}" style="--fill:${score}%"></div></div><div class="cred-desc" style="color:var(--${color})">${label}</div></div><div class="excuse-actions"><button data-copy-idx="${i}" class="copy-btn">\u{1F446} \u05DC\u05D7\u05E5 \u05DC\u05D4\u05E2\u05EA\u05E7\u05D4</button>${excuse.followups ? `<button data-followup-idx="${i}" class="followup-btn">\u{1F6E1}\uFE0F \u05D4\u05D2\u05E0\u05D4</button>` : ''}<button data-share-idx="${i}" class="share-btn">\u{1F4E4} \u05E9\u05D9\u05EA\u05D5\u05E3</button></div>`;
+    list.appendChild(card);
+  });
+
+  if (crazy) {
+    const crazyDiv = document.createElement('div');
+    crazyDiv.className = 'crazy-card';
+    crazyDiv.innerHTML = `<div class="crazy-header"><span>\u{1F92A} \u05EA\u05D9\u05E8\u05D5\u05E5 \u05DC\u05D0\u05DE\u05D9\u05E6\u05D9\u05DD \u05E9\u05D1\u05D9\u05E0\u05D9\u05E0\u05D5</span><span class="ai-badge">AI</span></div><div class="excuse-text">${crazy.text}</div><div class="cred-meter"><div class="cred-header"><span class="cred-label">\u05D0\u05DE\u05D9\u05E0\u05D5\u05EA</span><span class="cred-pct" style="color:var(--red)">3%</span></div><div class="cred-bar"><div class="cred-fill red" style="--fill:3%"></div></div></div><div class="excuse-actions"><button data-copy-crazy class="copy-btn">\u{1F446} \u05DC\u05D7\u05E5 \u05DC\u05D4\u05E2\u05EA\u05E7\u05D4</button><button data-share-crazy class="share-btn">\u{1F4E4} \u05E9\u05D9\u05EA\u05D5\u05E3</button></div><div class="crazy-warning">\u26A0\uFE0F \u05D0\u05D6\u05D4\u05E8\u05D4: \u05D4\u05E9\u05D9\u05DE\u05D5\u05E9 \u05D1\u05EA\u05D9\u05E8\u05D5\u05E5 \u05D6\u05D4 \u05E2\u05DC \u05D0\u05D7\u05E8\u05D9\u05D5\u05EA\u05DA \u05D1\u05DC\u05D1\u05D3</div>`;
+    list.appendChild(crazyDiv);
+  }
+
+  attachResultHandlers(sorted, crazy);
+  showScreen('screen-results');
+  document.getElementById('summary-bar').classList.remove('visible');
+  launchConfetti();
+}
+
+function attachResultHandlers(sorted, crazy) {
+  document.querySelectorAll('[data-copy-idx]').forEach(btn => {
+    btn.addEventListener('click', function() { copyToClipboard(sorted[parseInt(this.dataset.copyIdx)].text, this); });
+  });
+  if (crazy) {
+    const cb = document.querySelector('[data-copy-crazy]');
+    if (cb) cb.addEventListener('click', function() { copyToClipboard(crazy.text, this); });
+  }
+  document.querySelectorAll('[data-followup-idx]').forEach(btn => {
+    btn.addEventListener('click', function() { showFollowUp(sorted[parseInt(this.dataset.followupIdx)]); });
+  });
+  document.querySelectorAll('[data-share-idx]').forEach(btn => {
+    btn.addEventListener('click', function() { openShareSheet(sorted[parseInt(this.dataset.shareIdx)].text); });
+  });
+  if (crazy) {
+    const sc = document.querySelector('[data-share-crazy]');
+    if (sc) sc.addEventListener('click', function() { openShareSheet(crazy.text); });
+  }
+}
+
+// ===== CLIPBOARD =====
+function copyToClipboard(text, btn) {
+  navigator.clipboard.writeText(text).then(() => {
+    btn.classList.add('copied');
+    const orig = btn.innerHTML;
+    btn.innerHTML = '\u2705 \u05D4\u05D5\u05E2\u05EA\u05E7!';
+    setTimeout(() => { btn.classList.remove('copied'); btn.innerHTML = orig; }, 2000);
+  }).catch(() => {
+    const ta = document.createElement('textarea');
+    ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
+    document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta);
+    btn.classList.add('copied');
+    const orig = btn.innerHTML;
+    btn.innerHTML = '\u2705 \u05D4\u05D5\u05E2\u05EA\u05E7!';
+    setTimeout(() => { btn.classList.remove('copied'); btn.innerHTML = orig; }, 2000);
+  });
+}
+
+// ===== CONFETTI =====
+function launchConfetti() {
+  const c = document.getElementById('confetti-container');
+  c.innerHTML = '';
+  const colors = ['#f59e0b','#ef4444','#10b981','#3b82f6','#a855f7','#ec4899'];
+  for (let i = 0; i < 24; i++) {
+    const d = document.createElement('div');
+    d.className = 'confetti';
+    d.style.left = Math.random()*100+'%';
+    d.style.backgroundColor = colors[i%6];
+    d.style.animationDuration = (2+Math.random()*3)+'s';
+    d.style.animationDelay = (Math.random()*1.5)+'s';
+    d.style.width = (6+Math.random()*8)+'px';
+    d.style.height = (6+Math.random()*8)+'px';
+    c.appendChild(d);
+  }
+  setTimeout(() => { c.innerHTML = ''; }, 5000);
+}
+
+// ===== FOLLOW-UP =====
+function showFollowUp(excuse) {
+  document.getElementById('followup-excuse-text').textContent = excuse.text;
+  const qaList = document.getElementById('followup-qa-list');
+  qaList.innerHTML = '';
+  if (excuse.followups && excuse.followups.length) {
+    excuse.followups.forEach((qa, i) => {
+      const card = document.createElement('div');
+      card.className = 'qa-card';
+      card.innerHTML = `<div class="qa-attack"><span class="qa-icon">\u{1F534}</span><div class="qa-text">${qa.q}</div></div><div class="qa-defense"><span class="qa-icon">\u{1F6E1}\uFE0F</span><div><div class="qa-text">${qa.a}</div><button class="copy-answer" data-qa-idx="${i}">&#x1F4CB; \u05D4\u05E2\u05EA\u05E7 \u05EA\u05E9\u05D5\u05D1\u05D4</button></div></div>`;
+      qaList.appendChild(card);
+    });
+    qaList.querySelectorAll('.copy-answer').forEach(btn => {
+      btn.addEventListener('click', function() { copyToClipboard(excuse.followups[parseInt(this.dataset.qaIdx)].a, this); });
+    });
+  }
+  showScreen('screen-followup');
+}
+
+// ===== SHARE SHEET =====
+function openShareSheet(text) {
+  currentShareText = text;
+  document.getElementById('share-preview-text').textContent = text;
+  document.getElementById('share-overlay').classList.add('visible');
+  document.getElementById('share-sheet').classList.add('visible');
+}
+function closeShareSheet() {
+  document.getElementById('share-overlay').classList.remove('visible');
+  document.getElementById('share-sheet').classList.remove('visible');
+}
+function initShareSheet() {
+  document.getElementById('share-overlay').addEventListener('click', closeShareSheet);
+  document.getElementById('share-whatsapp').addEventListener('click', () => {
+    window.open(`https://wa.me/?text=${encodeURIComponent(currentShareText)}`, '_blank');
+  });
+  document.getElementById('share-anon').addEventListener('click', () => {
+    window.open(`https://wa.me/?text=${encodeURIComponent('\u05EA\u05D9\u05E8\u05D5\u05E5 \u05D0\u05E0\u05D5\u05E0\u05D9\u05DE\u05D9: ' + currentShareText)}`, '_blank');
+  });
+  document.getElementById('share-sms').addEventListener('click', () => {
+    window.open(`sms:?body=${encodeURIComponent(currentShareText)}`);
+  });
+  document.getElementById('share-copy-btn').addEventListener('click', () => {
+    copyToClipboard(currentShareText, document.getElementById('share-copy-btn'));
+  });
+  document.getElementById('share-more').addEventListener('click', () => {
+    if (navigator.share) navigator.share({ title: '\u05EA\u05E8\u05E6\u05E0\u05D9 - \u05EA\u05D9\u05E8\u05D5\u05E5', text: currentShareText }).catch(() => {});
+  });
+}
+
+// ===== SETTINGS =====
+function toggleSwitch(el) { el.classList.toggle('on'); }
+function initSettings() {
+  document.getElementById('settings-back-btn').addEventListener('click', () => {
+    showScreen(previousScreen || 'screen-event');
+  });
+}
+
+// ===== GENERATE BUTTON =====
+function initGenerateBtn() {
+  document.getElementById('generate-btn').addEventListener('click', () => {
+    if (state.event && state.time && state.closeness) generateResults();
+  });
+}
+
+// ===== RESET =====
+function resetApp() {
+  state.event = null; state.time = null; state.closeness = null;
+  document.querySelectorAll('.glass-card.selected').forEach(c => c.classList.remove('selected'));
+  document.getElementById('summary-bar').classList.remove('visible');
+  showScreen('screen-event');
+}
+
+// ===== INSTALL PROMPT =====
+function initInstallPrompt() {
+  window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault(); deferredInstallPrompt = e;
+    document.getElementById('install-banner').classList.add('visible');
+  });
+  document.getElementById('install-btn').addEventListener('click', () => {
+    if (deferredInstallPrompt) {
+      deferredInstallPrompt.prompt();
+      deferredInstallPrompt.userChoice.then(() => {
+        deferredInstallPrompt = null;
+        document.getElementById('install-banner').classList.remove('visible');
+      });
+    }
+  });
+}
+
+// ===== SERVICE WORKER =====
+function initSW() {
+  if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
+}
+
+// ===== INIT =====
+document.addEventListener('DOMContentLoaded', () => {
+  initSplash(); initEventGrid(); initTimeGrid(); initClosenessGrid();
+  initGenerateBtn(); initShareSheet(); initSettings(); initInstallPrompt(); initSW();
+});
+</script>
+</body>
+</html>
